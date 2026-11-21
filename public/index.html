@@ -1,0 +1,1955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thesis R and SQL Course</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Layout idea: a left rail that is the thesis pipeline as a route map; one lesson at a time in a 70ch reading column, with code, tables and widgets allowed to run wider. */
+  --bg: #f3f5f4;
+  --surface: #ffffff;
+  --surface-2: #eaf0ee;
+  --ink: #13212a;
+  --muted: #52616b;
+  --line: #d5dedb;
+  --sql: #0b6e6a;
+  --sql-soft: #dff1ef;
+  --r: #2f4f9e;
+  --r-soft: #e3e9f8;
+  --thesis: #94560a;
+  --thesis-soft: #fbf0df;
+  --why: #2f4f9e;
+  --why-soft: #eaf0fb;
+  --read: #2b7a3d;
+  --read-soft: #e7f4ea;
+  --good: #23743a;
+  --bad: #b02a1f;
+  --code-bg: #0f1c24;
+  --code-ink: #e3ecef;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --radius: 10px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e171c; --surface: #15222a; --surface-2: #1b2c34; --ink: #e4ecee; --muted: #9fb1b8; --line: #2a3d46;
+    --sql: #4fc2b9; --sql-soft: #12322f; --r: #8fa8ec; --r-soft: #1c2848; --thesis: #e9a94f; --thesis-soft: #33260f;
+    --why: #8fa8ec; --why-soft: #19243d; --read: #6fcf8a; --read-soft: #14301d; --good: #6fcf8a; --bad: #ff8a7d;
+    --code-bg: #091116; --code-ink: #dbe7ea; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e171c; --surface: #15222a; --surface-2: #1b2c34; --ink: #e4ecee; --muted: #9fb1b8; --line: #2a3d46;
+  --sql: #4fc2b9; --sql-soft: #12322f; --r: #8fa8ec; --r-soft: #1c2848; --thesis: #e9a94f; --thesis-soft: #33260f;
+  --why: #8fa8ec; --why-soft: #19243d; --read: #6fcf8a; --read-soft: #14301d; --good: #6fcf8a; --bad: #ff8a7d;
+  --code-bg: #091116; --code-ink: #dbe7ea; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 17px; line-height: 1.6; }
+a { color: var(--sql); }
+a:hover { color: var(--ink); }
+:focus-visible { outline: 3px solid var(--sql); outline-offset: 2px; border-radius: 4px; }
+h1, h2, h3, h4 { font-family: var(--font-display); line-height: 1.2; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(30px, 4vw, 44px); font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 30px; font-weight: 700; }
+h3 { font-size: 21px; font-weight: 600; margin-top: 8px; }
+h4 { font-size: 17px; font-weight: 600; }
+p { margin: 0; }
+code, pre, kbd { font-family: var(--font-mono); font-size: 0.86em; }
+:not(pre) > code { background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
+table { border-collapse: collapse; font-variant-numeric: tabular-nums; }
+
+/* ---------- shell ---------- */
+.shell { display: grid; grid-template-columns: 300px minmax(0, 1fr); min-height: 100%; }
+.rail { position: sticky; top: 0; height: 100vh; overflow-y: auto; padding: 24px 18px 32px; border-right: 1px solid var(--line); background: var(--surface); display: flex; flex-direction: column; gap: 18px; }
+.brand { display: flex; flex-direction: column; gap: 4px; }
+.brand b { font-family: var(--font-display); font-size: 19px; line-height: 1.2; }
+.brand span { color: var(--muted); font-size: 14px; }
+.progress { display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--muted); }
+.progress-bar { height: 6px; background: var(--surface-2); border-radius: 3px; overflow: hidden; }
+.progress-bar i { display: block; height: 100%; width: 0; background: var(--sql); transition: width .3s; }
+.route { list-style: none; margin: 0; padding: 0; position: relative; }
+.route::before { content: ""; position: absolute; left: 13px; top: 14px; bottom: 14px; width: 3px; background: var(--line); border-radius: 2px; }
+.route li { position: relative; }
+.route a { display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: start; padding: 7px 6px 7px 0; text-decoration: none; color: var(--ink); border-radius: 8px; }
+.route a:hover { background: var(--surface-2); }
+.route .stop { width: 29px; height: 29px; border-radius: 50%; display: grid; place-items: center; font: 600 13px/1 var(--font-mono); background: var(--surface); border: 3px solid var(--line); position: relative; z-index: 1; }
+.route a[data-kind="sql"] .stop { border-color: var(--sql); }
+.route a[data-kind="r"] .stop { border-color: var(--r); }
+.route a[data-kind="data"] .stop { border-color: var(--thesis); }
+.route a[data-kind="stats"] .stop { border-color: var(--read); }
+.route a.done .stop { background: var(--sql); border-color: var(--sql); color: #fff; }
+.route a.active { background: var(--sql-soft); }
+.route .label { display: flex; flex-direction: column; font-size: 15px; line-height: 1.3; }
+.route .label small { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; margin-top: 2px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 12px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 5px; }
+.legend i { width: 10px; height: 10px; border-radius: 50%; border: 3px solid; }
+.engine-status { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 12px; }
+.engine-status b.ok { color: var(--good); }
+.engine-status b.bad { color: var(--bad); }
+
+main { padding: 36px clamp(16px, 4vw, 56px) 80px; min-width: 0; }
+.lesson { display: none; max-width: 980px; flex-direction: column; gap: 20px; }
+.lesson.show { display: flex; }
+.lesson > p, .lesson > ul, .lesson > ol, .lesson > h3, .lesson > h4, .prose { max-width: 70ch; }
+.lesson ul, .lesson ol { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
+.eyebrow { font: 600 13px/1 var(--font-mono); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); display: flex; gap: 10px; align-items: center; }
+.tag { display: inline-block; padding: 3px 8px; border-radius: 999px; font: 600 11px/1.2 var(--font-mono); letter-spacing: .04em; }
+.tag.sql { background: var(--sql-soft); color: var(--sql); }
+.tag.r { background: var(--r-soft); color: var(--r); }
+.tag.data { background: var(--thesis-soft); color: var(--thesis); }
+.tag.stats { background: var(--read-soft); color: var(--read); }
+.goals { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 20px; max-width: 70ch; }
+.goals h4 { margin-bottom: 6px; }
+.pager { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 20px; margin-top: 12px; }
+
+/* ---------- callouts (same colours as your QMD guides) ---------- */
+.box { border-radius: var(--radius); padding: 14px 18px; border-left: 0; display: flex; flex-direction: column; gap: 8px; max-width: 78ch; }
+.box > b:first-child { font-family: var(--font-display); font-size: 15px; letter-spacing: .01em; }
+.box.why { background: var(--why-soft); color: var(--ink); box-shadow: inset 4px 0 0 var(--why); }
+.box.why > b:first-child { color: var(--why); }
+.box.read { background: var(--read-soft); box-shadow: inset 4px 0 0 var(--read); }
+.box.read > b:first-child { color: var(--read); }
+.box.thesis { background: var(--thesis-soft); box-shadow: inset 4px 0 0 var(--thesis); }
+.box.thesis > b:first-child { color: var(--thesis); }
+.box ul { margin: 0; padding-left: 20px; }
+
+/* ---------- code ---------- */
+.code { position: relative; border-radius: var(--radius); background: var(--code-bg); color: var(--code-ink); overflow: hidden; }
+.code .code-head { display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; font: 600 12px/1 var(--font-mono); color: #9fb6bf; border-bottom: 1px solid #22343e; }
+.code .code-head .lang.sql { color: #6fd3c9; }
+.code .code-head .lang.r { color: #a9bcf3; }
+.code pre { margin: 0; padding: 14px 16px; overflow-x: auto; font-size: 14px; line-height: 1.55; }
+.code .cm { color: #7f979f; }
+.code .kw { color: #f0c674; }
+.code .str { color: #9fd38a; }
+.code button.copy { background: transparent; border: 1px solid #36505c; color: #b9cbd1; font: 600 11px/1 var(--font-mono); padding: 5px 8px; border-radius: 6px; cursor: pointer; }
+.code button.copy:hover { color: #fff; border-color: #6fd3c9; }
+
+/* annotated code: click a line */
+.annot { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.annot .code pre { padding: 8px 0; }
+.annot .ln { display: block; padding: 1px 16px; cursor: pointer; white-space: pre; border-left: 3px solid transparent; }
+.annot .ln.has { border-left-color: #2f5360; }
+.annot .ln.has:hover { background: #1a2b34; }
+.annot .ln.on { background: #1f3b46; border-left-color: #6fd3c9; }
+.annot .explain { position: sticky; top: 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; min-height: 120px; display: flex; flex-direction: column; gap: 8px; }
+.annot .explain .hint { color: var(--muted); font-size: 15px; }
+
+/* ---------- interactive blocks ---------- */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; }
+.card > h4 { display: flex; align-items: center; gap: 8px; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+button, .btn { font: 600 14px/1 var(--font-body); padding: 9px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+button:hover { border-color: var(--sql); }
+button.primary { background: var(--sql); border-color: var(--sql); color: #fff; }
+button.primary:hover { filter: brightness(1.1); }
+button.ghost { background: transparent; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+label { font-size: 14px; color: var(--muted); display: inline-flex; flex-direction: column; gap: 4px; }
+input[type="text"], input[type="number"], input[type="date"], select, textarea { font: 15px/1.4 var(--font-body); padding: 7px 9px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--ink); }
+input[type="range"] { accent-color: var(--sql); width: 220px; }
+textarea.sqled { width: 100%; min-height: 150px; font: 14px/1.55 var(--font-mono); background: var(--code-bg); color: var(--code-ink); border: 1px solid #22343e; border-radius: var(--radius); padding: 12px 14px; resize: vertical; tab-size: 2; }
+.task { font-size: 16px; max-width: 75ch; }
+.task b { color: var(--sql); }
+.status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font: 600 13px/1.2 var(--font-body); }
+.status-pill.ok { background: var(--read-soft); color: var(--good); }
+.status-pill.no { background: #fde8e6; color: var(--bad); }
+:root[data-theme="dark"] .status-pill.no { background: #3a1714; }
+.status-pill.idle { background: var(--surface-2); color: var(--muted); }
+.result { overflow-x: auto; max-height: 360px; border: 1px solid var(--line); border-radius: 8px; }
+.result:empty { display: none; }
+.grid { font-size: 14px; width: 100%; }
+.grid th, .grid td { padding: 6px 10px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+.grid th { background: var(--surface-2); font-weight: 700; position: sticky; top: 0; font-family: var(--font-mono); font-size: 13px; }
+.grid td.num { text-align: right; }
+.grid td.null { color: var(--muted); font-style: italic; }
+.grid tr.drop td { color: var(--muted); text-decoration: line-through; }
+.grid tr.hl td { background: var(--sql-soft); }
+.err { color: var(--bad); font: 14px/1.5 var(--font-mono); white-space: pre-wrap; }
+.err:empty { display: none; }
+.note { font-size: 14px; color: var(--muted); }
+.solution { display: none; }
+.solution.show { display: block; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.kv { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; font-size: 15px; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; font-family: var(--font-mono); font-size: 14px; }
+.big { font: 700 26px/1.1 var(--font-display); }
+
+details.predict { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 0; max-width: 980px; }
+details.predict > summary { cursor: pointer; padding: 12px 18px; font-weight: 700; list-style: none; display: flex; gap: 10px; align-items: center; }
+details.predict > summary::-webkit-details-marker { display: none; }
+details.predict > summary::before { content: "▸"; color: var(--sql); transition: transform .15s; }
+details.predict[open] > summary::before { transform: rotate(90deg); }
+details.predict > div { padding: 0 18px 16px; display: flex; flex-direction: column; gap: 10px; }
+
+/* quiz */
+.quiz { display: flex; flex-direction: column; gap: 16px; }
+.q { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+.q p.stem { font-weight: 700; }
+.q .opts { display: flex; flex-direction: column; gap: 8px; }
+.q .opts button { text-align: left; font-weight: 400; line-height: 1.4; padding: 10px 12px; }
+.q .opts button.right { border-color: var(--good); background: var(--read-soft); }
+.q .opts button.wrong { border-color: var(--bad); }
+.q .fb { font-size: 15px; display: none; }
+.q .fb.show { display: block; }
+.q .fb b.r { color: var(--good); }
+.q .fb b.w { color: var(--bad); }
+.quiz-score { font-weight: 700; }
+
+/* hero route map */
+.hero { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 26px clamp(16px, 3vw, 30px); display: flex; flex-direction: column; gap: 18px; }
+.metro { overflow-x: auto; padding-bottom: 4px; }
+.metro ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(7, minmax(118px, 1fr)); position: relative; min-width: 840px; }
+.metro ol::before { content: ""; position: absolute; left: 6%; right: 6%; top: 21px; height: 5px; border-radius: 3px; background: linear-gradient(90deg, var(--thesis) 0 14%, var(--sql) 14% 44%, var(--r) 44% 72%, var(--read) 72% 100%); }
+.metro li { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; position: relative; }
+.metro button { display: flex; flex-direction: column; align-items: center; gap: 8px; background: none; border: 0; padding: 0 4px; cursor: pointer; color: var(--ink); }
+.metro .dot { width: 46px; height: 46px; border-radius: 50%; background: var(--surface); border: 5px solid var(--sql); display: grid; place-items: center; font: 700 13px/1 var(--font-mono); }
+.metro li:nth-child(1) .dot { border-color: var(--thesis); }
+.metro li:nth-child(4) .dot, .metro li:nth-child(5) .dot { border-color: var(--r); }
+.metro li:nth-child(6) .dot, .metro li:nth-child(7) .dot { border-color: var(--read); }
+.metro b { font: 600 15px/1.2 var(--font-display); }
+.metro small { color: var(--muted); font-size: 13px; line-height: 1.3; }
+.metro button:hover .dot { transform: scale(1.06); }
+.metro-detail { background: var(--surface-2); border-radius: var(--radius); padding: 14px 18px; display: flex; flex-direction: column; gap: 6px; }
+
+/* timelines (svg) */
+.tl-wrap { overflow-x: auto; }
+svg text { font-family: var(--font-body); fill: var(--ink); }
+svg .muted { fill: var(--muted); }
+
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 1fr; }
+  .rail { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+  .route { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+  .route::before { display: none; }
+  .annot { grid-template-columns: 1fr; }
+  .annot .explain { position: static; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav class="rail" aria-label="Course modules">
+    <div class="brand"><b>R, SQL &amp; data management</b><span>for your All of Us thesis on hypoglycemia, depression and dementia</span></div>
+    <div class="progress"><span id="prog-text">0 of 12 modules done</span><div class="progress-bar"><i id="prog-bar"></i></div></div>
+    <ol class="route" id="route"></ol>
+    <div class="legend"><span><i style="border-color:var(--thesis)"></i>Data</span><span><i style="border-color:var(--sql)"></i>SQL</span><span><i style="border-color:var(--r)"></i>R</span><span><i style="border-color:var(--read)"></i>Stats</span></div>
+    <p class="engine-status" id="engine">Loading the SQL engine…</p>
+  </nav>
+  <main id="main">
+<!-- ================= 0. START ================= -->
+<section class="lesson" data-id="start" id="m-start">
+  <div class="hero">
+    <div class="eyebrow"><span class="tag data">Start here</span> Module 0</div>
+    <h1>R, SQL and data management for your All of Us thesis</h1>
+    <p class="prose">Every example in this course comes from your own guides: the BigQuery queries that find people and codes, the R that turns records into analysis datasets, and the methods behind your hazard ratios. Click a stop to see where each skill is used.</p>
+    <div data-widget="metro"></div>
+  </div>
+
+  <h3>How this course works</h3>
+  <ul>
+    <li><b>12 modules</b>, in the order your data flows: the tables, SQL, your guides’ SQL, R, data management, building the analysis dataset, design, and estimation. A capstone follows one person through all of Aim 3.</li>
+    <li><b>Run real SQL here.</b> SQL modules have exercise boxes connected to a practice database of 12 made-up people, with the same tables and columns your guides query. Each exercise checks your answer.</li>
+    <li><b>R is taught with your guides’ code.</b> R can’t run in this page, so R lessons use “predict, then reveal” cards and interactive tools that do exactly what the R code does, with the R shown next to them.</li>
+    <li><b>The coloured boxes match your guides</b>:</li>
+  </ul>
+  <div class="two">
+    <div class="box why"><b>Why this matters</b><p>The reasoning behind a step.</p></div>
+    <div class="box read"><b>How to read it</b><p>What an output means.</p></div>
+    <div class="box thesis"><b>In your thesis</b><p>Where the guides use it.</p></div>
+  </div>
+
+  <h3>The practice database</h3>
+  <p>Twelve people, made up for this course, stored in the OMOP tables All of Us uses: <code>person</code>, <code>condition_occurrence</code>, <code>drug_exposure</code>, <code>measurement</code>, <code>visit_occurrence</code>, <code>death</code> and <code>concept</code>. They were designed so that every rule in Aim 3 matters for someone. Person 8 has no diabetes; person 10 took sertraline before his depression code; person 11 is too young; person 12 had a sulfonylurea started weeks before his depression diagnosis.</p>
+  <p>The exercises run on SQLite inside your browser, which understands the BigQuery spellings your guides use: <code>REGEXP_CONTAINS</code>, raw strings <code>r'^E11'</code>, <code>DATE_SUB(…, INTERVAL n DAY)</code>, <code>DATE_ADD</code> and backtick-quoted table names.</p>
+
+  <div class="box thesis"><b>The All of Us rule, everywhere in this course</b>
+    <p>Counts of 1–20 never leave the Workbench, and row-level data never leaves at all. Only model estimates and masked counts (“&lt;20”) can be copied out. The practice data here is made up, which is the only reason you can see individual rows.</p></div>
+
+  <h3>A study plan</h3>
+  <ol>
+    <li><b>Week 1:</b> Modules 0–4 (the data and SQL). About 1 hour each, with exercises.</li>
+    <li><b>Week 2:</b> Modules 5–7 (your guides’ SQL, R, data management). Keep your Aim 3 guide open beside the course.</li>
+    <li><b>Week 3:</b> Modules 8–11 (analysis datasets, design, estimation, capstone). Then reread your results with the output reader in Module 10.</li>
+  </ol>
+  <div class="quiz" data-quiz="start"></div>
+</section>
+
+<!-- ================= 1. OMOP ================= -->
+<section class="lesson" data-id="omop" id="m-omop">
+  <div class="eyebrow"><span class="tag data">Data</span> Module 1</div>
+  <h2>The data: All of Us and the OMOP tables</h2>
+  <div class="goals"><h4>You will learn</h4><ul>
+    <li>what a row means in each OMOP table your guides use;</li>
+    <li>how concept IDs connect records to codes and names;</li>
+    <li>the difference between source and standard concepts, and why your guides use source concepts for diagnoses.</li></ul></div>
+
+  <h3>One table per kind of record</h3>
+  <p>The All of Us EHR data uses the OMOP Common Data Model. Instead of one big table per person, there is <b>one table per kind of event</b>, and every row is one record: a diagnosis entered at a visit, a prescription, a lab result. Each row carries a <code>person_id</code>, a date and a <b>concept ID</b> that says what the record is.</p>
+  <div class="result"><table class="grid">
+    <thead><tr><th>Table</th><th>One row is…</th><th>Key columns</th><th>Your guides use it for</th></tr></thead>
+    <tbody>
+      <tr><td>person</td><td>a participant</td><td>person_id, gender_concept_id, year_of_birth, race/ethnicity concept IDs</td><td>age, sex, race/ethnicity</td></tr>
+      <tr><td>condition_occurrence</td><td>a diagnosis code on a date</td><td>condition_source_concept_id, condition_start_date, visit_occurrence_id</td><td>diabetes, depression, dementia, hypoglycemia codes, comorbidities, cataract</td></tr>
+      <tr><td>drug_exposure</td><td>a prescription or dispensing</td><td>drug_concept_id, drug_exposure_start_date</td><td>antidepressants, diabetes drugs, dementia drugs</td></tr>
+      <tr><td>measurement</td><td>a lab or vital sign</td><td>measurement_concept_id (LOINC), value_as_number, unit</td><td>HbA1c, glucose, creatinine (eGFR), BMI, blood pressure, LDL</td></tr>
+      <tr><td>visit_occurrence</td><td>a visit</td><td>visit_concept_id (outpatient, ER, inpatient), visit_start_date</td><td>active care, records before time zero, severity of hypoglycemia</td></tr>
+      <tr><td>observation</td><td>a survey answer (among other things)</td><td>observation_source_concept_id, value_source_concept_id</td><td>education, income, smoking</td></tr>
+      <tr><td>death</td><td>a death</td><td>death_date</td><td>competing event, end of follow-up</td></tr>
+      <tr><td>concept</td><td>a code in a vocabulary</td><td>concept_id, vocabulary_id, concept_code, concept_name</td><td>translating IDs into ICD-10, LOINC and RxNorm codes and names</td></tr>
+    </tbody></table></div>
+
+  <h3>Concept IDs: records store numbers, the concept table explains them</h3>
+  <p>A diagnosis record doesn’t say “E11.9”. It stores a number such as <code>1001</code>, and the <code>concept</code> table says that 1001 is vocabulary ICD10CM, code E11.9, “Type 2 diabetes mellitus without complications”. To find records by code, you <b>join</b> the records to <code>concept</code> (Module 3).</p>
+  <div class="box why"><b>Source or standard concept?</b>
+    <p>Every diagnosis has two IDs. <code>condition_source_concept_id</code> is the code the clinic entered (ICD-9 or ICD-10). <code>condition_concept_id</code> is that code mapped to a SNOMED “standard” concept. Your code lists are written as ICD patterns (E11, F32, G30), so your guides join on the <b>source</b> concept. Drugs are the other way round: <code>drug_concept_id</code> is a standard RxNorm concept whose <i>name</i> contains the ingredient, so your guides match drug names with regular expressions.</p></div>
+
+  <h3>Explore the practice tables</h3>
+  <div class="card"><div data-widget="tableExplorer"></div></div>
+  <div class="box read"><b>How to read it</b><ul>
+    <li>Look at person 1 in <code>condition_occurrence</code>: two E16.2 (hypoglycemia) records, on 2019-02-11 and 2019-02-14. The first has <code>visit_occurrence_id</code> 105; in <code>visit_occurrence</code>, visit 105 is an Emergency Room visit. That link is how your guides grade hypoglycemia as severe.</li>
+    <li>Person 9 has a drug called “naltrexone … / bupropion …”. It matches the word bupropion but it is a weight-loss tablet, which is why your drug query has an exclusion.</li>
+  </ul></div>
+  <div class="sqlbox" data-ex="omop-free"></div>
+  <div class="box thesis"><b>In your thesis</b><p>Part 1 of each guide turns code lists into concept IDs (<code>codes_sql</code>), Part 2 matches drug names (<code>DRUG_REGEX</code>), Part 3 uses LOINC codes for labs (<code>LAB_LOINC</code>), and the Aim 1 guide grades hypoglycemia by the visit each code sits on.</p></div>
+  <div class="quiz" data-quiz="omop"></div>
+</section>
+
+<!-- ================= 2. SQL BASICS ================= -->
+<section class="lesson" data-id="sql-basics" id="m-sql-basics">
+  <div class="eyebrow"><span class="tag sql">SQL</span> Module 2</div>
+  <h2>SQL 1: asking a table questions</h2>
+  <div class="goals"><h4>You will learn</h4><ul>
+    <li>SELECT, FROM, WHERE, ORDER BY and LIMIT;</li>
+    <li>conditions with AND, OR, IN, BETWEEN and IS NULL;</li>
+    <li>matching codes with patterns (regular expressions);</li>
+    <li>counting rows and people.</li></ul></div>
+
+  <h3>The shape of every query</h3>
+  <div class="code" data-lang="sql"><pre>SELECT person_id, year_of_birth      -- which columns
+FROM person                          -- which table
+WHERE year_of_birth &lt; 1955           -- which rows
+ORDER BY year_of_birth               -- in what order
+LIMIT 10;                            -- at most how many</pre></div>
+  <p>SQL describes the result you want, and the database works out how to get it. The clauses are written in the order above, but they are <b>applied</b> in this order: FROM (pick the table) → WHERE (keep rows) → SELECT (compute columns) → ORDER BY (sort) → LIMIT. That’s why you can’t use a column alias from SELECT inside WHERE.</p>
+
+  <h3>Conditions</h3>
+  <div class="result"><table class="grid"><thead><tr><th>You write</th><th>Meaning</th></tr></thead><tbody>
+    <tr><td><code>gender_concept_id = 8532</code></td><td>equal (8532 = FEMALE)</td></tr>
+    <tr><td><code>year_of_birth &lt;&gt; 1950</code></td><td>not equal</td></tr>
+    <tr><td><code>a AND b</code>, <code>a OR b</code>, <code>NOT a</code></td><td>combine conditions; use brackets when mixing AND and OR</td></tr>
+    <tr><td><code>person_id IN (1, 4, 12)</code></td><td>one of a list; the list can be a whole query</td></tr>
+    <tr><td><code>condition_start_date BETWEEN '2018-01-01' AND '2018-12-31'</code></td><td>a range, both ends included</td></tr>
+    <tr><td><code>visit_occurrence_id IS NULL</code></td><td>missing. <code>= NULL</code> never works.</td></tr>
+  </tbody></table></div>
+  <p>Dates are stored as text in the form <code>'YYYY-MM-DD'</code>, so comparing them as text gives the right order: <code>'2017-06-01' &lt; '2018-01-15'</code>.</p>
+
+  <div class="sqlbox" data-ex="s1"></div>
+
+  <h3>Counting</h3>
+  <div class="code" data-lang="sql"><pre>SELECT COUNT(*) AS records,                      -- rows
+       COUNT(DISTINCT person_id) AS people          -- different people
+FROM condition_occurrence;</pre></div>
+  <div class="sqlbox" data-ex="s2"></div>
+  <div class="sqlbox" data-ex="s3"></div>
+
+  <h3>Matching codes with patterns</h3>
+  <p>Your code lists are <b>regular expressions</b>: short patterns that describe many codes at once. BigQuery tests them with <code>REGEXP_CONTAINS(text, r'pattern')</code>; the <code>r</code> means a “raw” string, so backslashes are passed through unchanged.</p>
+  <div class="result"><table class="grid"><thead><tr><th>Pattern piece</th><th>Means</th><th>Example from your guides</th></tr></thead><tbody>
+    <tr><td><code>^</code></td><td>starts with</td><td><code>^N18</code>: CKD codes N18.x</td></tr>
+    <tr><td><code>|</code></td><td>or</td><td><code>^(F32|F33)</code>: depression</td></tr>
+    <tr><td><code>\.</code></td><td>a literal dot (a bare <code>.</code> means “any character”)</td><td><code>^G31\.84</code>: MCI</td></tr>
+    <tr><td><code>[123]</code></td><td>one of these characters</td><td><code>^F0[123]</code>: F01, F02, F03 (dementia)</td></tr>
+    <tr><td><code>( )</code></td><td>groups alternatives</td><td><code>^(296\.[23]|300\.4|311)</code>: ICD-9 depression</td></tr>
+  </tbody></table></div>
+  <p>For drug names, the guides lower-case the name first: <code>REGEXP_CONTAINS(LOWER(concept_name), r'sertraline|fluoxetine|…')</code>. A pattern without <code>^</code> matches anywhere in the text, which is what you want for an ingredient inside a long product name.</p>
+  <div class="sqlbox" data-ex="s4"></div>
+
+  <details class="predict"><summary>Predict, then reveal: why does LIKE fail here?</summary><div>
+    <div class="code" data-lang="sql"><pre>SELECT concept_code FROM concept WHERE concept_code LIKE 'F3%';</pre></div>
+    <p>LIKE uses <code>%</code> as “anything”. In All of Us, <code>'F3%'</code> would match F32 and F33, but also F31 (bipolar disorder) and F34.0 (cyclothymia), which are not in your depression definition. A regular expression lets you say exactly <code>^(F32|F33|F34\.1)</code>.</p></div></details>
+  <div class="box thesis"><b>In your thesis</b><p>The <code>codes</code> table in Part 1 holds one ICD-10 and one ICD-9 pattern per condition set. <code>codes_sql()</code> pastes them into queries like Exercise 2.4, one per set, joined with UNION ALL.</p></div>
+  <div class="quiz" data-quiz="sql-basics"></div>
+</section>
+
+<!-- ================= 3. SQL JOINS ================= -->
+<section class="lesson" data-id="sql-joins" id="m-sql-joins">
+  <div class="eyebrow"><span class="tag sql">SQL</span> Module 3</div>
+  <h2>SQL 2: joining and summarising</h2>
+  <div class="goals"><h4>You will learn</h4><ul>
+    <li>how joins combine tables, and why they can repeat rows;</li>
+    <li>INNER vs LEFT joins, and their R twins;</li>
+    <li>GROUP BY with MIN, MAX and COUNT, and HAVING.</li></ul></div>
+
+  <h3>See a join happen</h3>
+  <p>A join matches rows of two tables on a key, here <code>person_id</code>. Try each type and watch which rows survive.</p>
+  <div class="card"><div data-widget="joinViz"></div></div>
+  <div class="box why"><b>Why joins matter so much</b><p>Almost every bug in a cohort build is a join that dropped people (INNER where LEFT was needed) or multiplied rows (a key that isn’t unique). Before any join, ask: how many rows per key does each table have?</p></div>
+
+  <h3>Joining records to their codes</h3>
+  <div class="code" data-lang="sql"><pre>SELECT co.person_id, co.condition_start_date, c.concept_code, c.concept_name
+FROM condition_occurrence AS co                      -- "co" is a short alias
+JOIN concept AS c ON c.concept_id = co.condition_source_concept_id
+WHERE c.vocabulary_id = 'ICD10CM';</pre></div>
+  <p>Aliases (<code>co</code>, <code>c</code>) keep queries short and say which table each column comes from. You need them whenever two tables share a column name.</p>
+  <div class="sqlbox" data-ex="j1"></div>
+
+  <h3>One row per person: GROUP BY</h3>
+  <p><code>GROUP BY person_id</code> collects each person’s rows into a group; aggregate functions then summarise each group: <code>COUNT(*)</code>, <code>MIN(date)</code> (first date), <code>MAX(date)</code> (last date), <code>COUNT(DISTINCT date)</code> (number of days). Every column in SELECT must be either in GROUP BY or inside an aggregate.</p>
+  <div class="sqlbox" data-ex="j2"></div>
+  <div class="sqlbox" data-ex="j3"></div>
+  <div class="sqlbox" data-ex="j4"></div>
+  <div class="sqlbox" data-ex="j5"></div>
+
+  <details class="predict"><summary>Predict, then reveal: a list of people inside another query</summary><div>
+    <div class="code" data-lang="sql"><pre>SELECT person_id, drug_exposure_start_date
+FROM drug_exposure
+WHERE person_id IN (SELECT DISTINCT co.person_id
+                    FROM condition_occurrence AS co
+                    JOIN concept AS c ON c.concept_id = co.condition_source_concept_id
+                    WHERE REGEXP_CONTAINS(c.concept_code, r'^(E11|250)'));</pre></div>
+    <p>Drug records only for people who have a diabetes code. The inner query returns a list of person_ids; <code>IN</code> keeps rows whose person is in that list. This is exactly your guides’ <code>DM_PEOPLE</code>, used to keep every query restricted to people with diabetes.</p></div></details>
+  <div class="box thesis"><b>In your thesis</b><p>Exercise 3.3 is the heart of <code>first_dates_sql()</code>. Your version does it for 15 condition sets in one pass, and also returns the second date and the number of coded days (Module 5).</p></div>
+  <div class="quiz" data-quiz="sql-joins"></div>
+</section>
+
+<!-- ================= 4. SQL ADVANCED ================= -->
+<section class="lesson" data-id="sql-advanced" id="m-sql-advanced">
+  <div class="eyebrow"><span class="tag sql">SQL</span> Module 4</div>
+  <h2>SQL 3: time windows and latest values</h2>
+  <div class="goals"><h4>You will learn</h4><ul>
+    <li>CTEs (WITH): building a query in named steps;</li>
+    <li>windows of time around each person’s own time zero;</li>
+    <li>the latest value before time zero (window functions);</li>
+    <li>CASE WHEN and UNION ALL, the two tricks behind the baseline query.</li></ul></div>
+
+  <h3>Named steps with WITH</h3>
+  <div class="code" data-lang="sql"><pre>WITH dep AS (                          -- step 1: each person's time zero
+  SELECT person_id, MIN(condition_start_date) AS t0 FROM ... GROUP BY person_id),
+labs AS (                              -- step 2: labs near each time zero
+  SELECT ... FROM dep JOIN measurement ...)
+SELECT * FROM labs;                    -- final step</pre></div>
+  <p>A CTE is like an R object made on one line and used on the next, except it only lives inside this one query. Your baseline query has five: <code>pop</code>, <code>lc</code>, <code>labs</code>, <code>lab_last</code>, <code>meds</code>, <code>visits</code>.</p>
+  <div class="sqlbox" data-ex="a1"></div>
+
+  <h3>Windows of time around time zero</h3>
+  <p>Each person has their own time zero, so windows are written relative to it: join the people-with-t0 table to the records, then filter dates against <code>t0</code>. In BigQuery, <code>DATE_SUB(t0, INTERVAL 365 DAY)</code> is the date one year earlier and <code>DATE_ADD(t0, INTERVAL 90 DAY)</code> is 90 days later.</p>
+  <div class="result"><table class="grid"><thead><tr><th>Window in your guides</th><th>Condition</th><th>Why the boundary is where it is</th></tr></thead><tbody>
+    <tr><td>Medicines, visits: year before</td><td><code>date &lt; t0 AND date &gt;= DATE_SUB(t0, INTERVAL 365 DAY)</code></td><td>strictly before t0: a prescription on day 0 may be the treatment decision</td></tr>
+    <tr><td>Labs: last value in 2 years</td><td><code>date &lt;= t0 AND date &gt; DATE_SUB(t0, INTERVAL 730 DAY)</code></td><td>a lab on the day of time zero describes the person at the decision</td></tr>
+    <tr><td>New user: no antidepressant in the year before</td><td>no record with <code>date &lt; t0 AND date &gt;= t0 − 365</code></td><td>everyone starts at the same decision point</td></tr>
+    <tr><td>Grace period (3a)</td><td><code>date &gt;= t0 AND date &lt;= DATE_ADD(t0, INTERVAL 90 DAY)</code></td><td>prescribed at the diagnosis visit counts</td></tr>
+    <tr><td>Outcomes</td><td><code>date &gt; t0</code></td><td>after time zero only; earlier events are history (covariates)</td></tr>
+  </tbody></table></div>
+  <div class="sqlbox" data-ex="a2"></div>
+
+  <h3>The latest value before time zero</h3>
+  <p>A <b>window function</b> numbers rows within each person without collapsing them: <code>ROW_NUMBER() OVER (PARTITION BY person_id ORDER BY measurement_date DESC)</code> gives 1 to each person’s newest row, 2 to the next, and so on. Keep <code>rn = 1</code>.</p>
+  <div class="sqlbox" data-ex="a3"></div>
+
+  <h3>CASE WHEN: if–then inside SQL</h3>
+  <div class="code" data-lang="sql" data-title="from baseline_sql: unit conversion"><pre>CASE WHEN lc.lab = 'hba1c' AND LOWER(u.concept_name) LIKE '%per mole%'
+       THEN m.value_as_number / 10.929 + 2.15        -- mmol/mol to %
+     WHEN lc.lab = 'creatinine' AND LOWER(u.concept_name) LIKE '%micromole%'
+       THEN m.value_as_number / 88.42                -- µmol/L to mg/dL
+     ELSE m.value_as_number END AS value</pre></div>
+  <p>The first true WHEN wins; ELSE covers everything else. R’s <code>case_when()</code> works the same way (Module 6).</p>
+
+  <h3>UNION ALL: stacking results</h3>
+  <p>UNION ALL puts the rows of one query under the rows of another. Both must have the same columns in the same order. The baseline query stacks labs, medicines and visits into one long table of <code>row_id, item, value</code>, so all three come back in a single download.</p>
+  <div class="sqlbox" data-ex="a4"></div>
+  <div class="box thesis"><b>In your thesis</b><p>Exercises 4.1–4.4 are the building blocks of <code>baseline_sql()</code>. In the next module you’ll read that query line by line.</p></div>
+  <div class="quiz" data-quiz="sql-advanced"></div>
+</section>
+
+<!-- ================= 5. THESIS SQL ================= -->
+<section class="lesson" data-id="thesis-sql" id="m-thesis-sql">
+  <div class="eyebrow"><span class="tag sql">SQL</span> Module 5</div>
+  <h2>Reading the SQL in your guides</h2>
+  <div class="goals"><h4>You will learn</h4><ul>
+    <li>how R writes SQL text with glue();</li>
+    <li>to read your three main queries line by line: first dates, drug days, baseline;</li>
+    <li>the BigQuery features that differ from the practice engine.</li></ul></div>
+
+  <h3>R writes the SQL</h3>
+  <p>Your guides never type a full query by hand. R builds the text with <code>glue()</code>: anything inside <code>{ }</code> is replaced by the value of an R expression before the text is sent to BigQuery.</p>
+  <div class="code" data-lang="r"><pre>CDR <- "wb-affable-acorn-7941.R2025Q4R6"
+x   <- filter(codes, concept_set == "depression")
+glue("SELECT concept_id FROM `{CDR}`.concept
+      WHERE vocabulary_id = 'ICD10CM' AND REGEXP_CONTAINS(concept_code, r'{x$icd10}')")</pre></div>
+  <div class="code" data-lang="sql" data-title="the text glue() produces"><pre>SELECT concept_id FROM `wb-affable-acorn-7941.R2025Q4R6`.concept
+      WHERE vocabulary_id = 'ICD10CM' AND REGEXP_CONTAINS(concept_code, r'^(F32|F33|F34\.1)')</pre></div>
+  <div class="box why"><b>Why build SQL in R?</b><p>One code list drives every query, the CDR version is set once in Part 0, and a function like <code>first_dates_sql(sets, people_sql)</code> can be reused across all three aims. To see the SQL any function makes, print it: <code>cat(first_dates_sql("depression", DM_PEOPLE))</code>.</p></div>
+
+  <h3>first_dates_sql(): first dates of every condition</h3>
+  <div class="annot" data-annot="first_dates"></div>
+  <div class="sqlbox" data-ex="t1"></div>
+
+  <h3>The drug-days query</h3>
+  <div class="annot" data-annot="drugs"></div>
+  <div class="code" data-lang="r" data-title="how dc_sql is built from DRUG_REGEX"><pre>dc_sql <- paste(sprintf("SELECT concept_id, '%s' AS cls FROM `%s`.concept
+                         WHERE domain_id = 'Drug' AND REGEXP_CONTAINS(LOWER(concept_name), r'%s')
+                           AND NOT REGEXP_CONTAINS(LOWER(concept_name), r'%s')",
+                        names(DRUG_REGEX), CDR, DRUG_REGEX, vapply(names(DRUG_REGEX), excl_of, "")),
+                collapse = "\nUNION ALL\n")</pre></div>
+  <p><code>sprintf()</code> fills each <code>%s</code> in turn, once per drug class (it is vectorised over <code>names(DRUG_REGEX)</code>), and <code>paste(…, collapse = "UNION ALL")</code> glues the class queries into one. For classes without an exclusion, <code>excl_of()</code> returns <code>^$</code>, a pattern that only matches an empty name, so nothing is excluded.</p>
+
+  <h3>baseline_sql(): everything at time zero</h3>
+  <div class="annot" data-annot="baseline"></div>
+
+  <h3>BigQuery vs the practice engine</h3>
+  <div class="result"><table class="grid"><thead><tr><th>BigQuery (your guides)</th><th>Practice engine here</th><th>Note</th></tr></thead><tbody>
+    <tr><td><code>`{CDR}`.concept</code></td><td><code>concept</code></td><td>the practice engine drops the dataset name for you</td></tr>
+    <tr><td><code>REGEXP_CONTAINS(x, r'^E11')</code></td><td>the same</td><td>added to the practice engine</td></tr>
+    <tr><td><code>DATE_SUB(t0, INTERVAL 365 DAY)</code></td><td>the same (translated to <code>date(t0, '-365 days')</code>)</td><td></td></tr>
+    <tr><td><code>DATE '2018-05-02'</code></td><td>the same</td><td>a date literal</td></tr>
+    <tr><td><code>ARRAY_AGG(x ORDER BY d DESC LIMIT 1)[OFFSET(0)]</code></td><td><code>ROW_NUMBER() OVER (… ORDER BY d DESC)</code> then <code>rn = 1</code></td><td>arrays don’t exist in SQLite; both give the latest value</td></tr>
+    <tr><td><code>UNNEST(ARRAY&lt;STRUCT&lt;…&gt;&gt;[…])</code></td><td>not available</td><td>used only to send your time zeros into the query</td></tr>
+  </tbody></table></div>
+  <div class="box thesis"><b>Working safely in BigQuery</b><ul>
+    <li>Test a new query with <code>LIMIT 10</code> first, then remove it.</li>
+    <li>Filter people early (<code>WHERE person_id IN ({DM_PEOPLE})</code>): BigQuery bills by data scanned.</li>
+    <li><code>run_query()</code> saves each result by name. If you change a query, change its name or use <code>refresh = TRUE</code>, or you’ll silently get the old answer.</li>
+  </ul></div>
+  <div class="quiz" data-quiz="thesis-sql"></div>
+</section>
+
+<!-- ================= 6. R PIPELINE ================= -->
+<section class="lesson" data-id="r-pipeline" id="m-r-pipeline">
+  <div class="eyebrow"><span class="tag r">R</span> Module 6</div>
+  <h2>R: from query to tibble</h2>
+  <div class="goals"><h4>You will learn</h4><ul>
+    <li>how a session works (packages, objects, restarts) and how to fix the errors you’ve hit;</li>
+    <li>the dplyr verbs and joins your guides use, read as sentences;</li>
+    <li>if_else, case_when, coalesce, dates, pivot_wider, functions and lists.</li></ul></div>
+
+  <h3>The session: packages, objects, saved files</h3>
+  <ul>
+    <li><b>install.packages("mice")</b> downloads a package once. <b>library(mice)</b> loads it into this session, and must be run again after every restart.</li>
+    <li><b>Objects</b> (<code>rows</code>, <code>cov</code>, <code>ana</code>) live in memory and vanish when R restarts. <b>Saved tables</b> (parquet files via <code>save_tbl()</code> and <code>run_query()</code>) stay on disk and come back with <code>load_tbl()</code>.</li>
+    <li>If two packages have a function with the same name, the one loaded last wins. That’s why Part 0 has <code>select <- dplyr::select</code>.</li>
+  </ul>
+  <div class="card"><h4><span class="tag r">R</span> Error doctor: the errors you’ve hit</h4><div data-widget="errorDoctor"></div></div>
+
+  <h3>run_query(): BigQuery once, then a saved copy</h3>
+  <div class="annot" data-annot="run_query"></div>
+
+  <h3>Reading dplyr as sentences</h3>
+  <p>The pipe <code>%>%</code> means “then”. Each verb takes a table and returns a table.</p>
+  <div class="code" data-lang="r" data-title="from Part 4, read aloud"><pre>out %>%                                   # take the outcomes table, then
+  group_by(trial, arm) %>%                # make one group per question and arm, then
+  summarise(people = n(),                 # count rows in each group,
+            hypo = sum(status_hypo == 1), # count events (TRUE counts as 1),
+            .groups = "drop") %>%         # and drop the grouping, then
+  mutate(across(c(people, hypo), mask))   # replace 1-20 with "<20" in both columns</pre></div>
+  <div class="result"><table class="grid"><thead><tr><th>Verb</th><th>Does</th><th>Example from your guides</th></tr></thead><tbody>
+    <tr><td><code>filter()</code></td><td>keeps rows</td><td><code>filter(d, yrs(t0 - birth_date) >= MIN_AGE)</code></td></tr>
+    <tr><td><code>select()</code></td><td>keeps or drops columns</td><td><code>select(row_id, person_id, t0)</code>; <code>select(-any_of(COVARS))</code></td></tr>
+    <tr><td><code>mutate()</code></td><td>adds or changes columns</td><td><code>mutate(age = yrs(t0 - birth_date))</code></td></tr>
+    <tr><td><code>summarise()</code></td><td>one row per group</td><td><code>summarise(f_dem_drug = min(date))</code></td></tr>
+    <tr><td><code>group_by()</code></td><td>defines groups for the next verbs</td><td><code>group_by(person_id)</code></td></tr>
+    <tr><td><code>arrange()</code></td><td>sorts</td><td><code>arrange(person_id, date)</code></td></tr>
+    <tr><td><code>count()</code>, <code>distinct()</code></td><td>tallies; removes duplicates</td><td><code>count(trial, arm)</code>; <code>distinct(row_id)</code></td></tr>
+    <tr><td><code>left_join()</code>, <code>inner_join()</code></td><td>SQL’s LEFT and INNER JOIN</td><td><code>left_join(firsts_wide, by = "person_id")</code></td></tr>
+    <tr><td><code>semi_join()</code>, <code>anti_join()</code></td><td>keep rows with / without a match, adding no columns</td><td><code>rows %>% semi_join(cov, by = "row_id")</code></td></tr>
+  </tbody></table></div>
+  <p>The join tool in Module 3 shows each join with its dplyr code. One R-only detail: <code>relationship = "many-to-many"</code> tells dplyr that you expect both tables to repeat the key (many hypoglycemia days × several rows per person), so it shouldn’t warn.</p>
+
+  <h3>Conditions, missing values and dates</h3>
+  <div class="code" data-lang="r"><pre>if_else(!is.na(init_date) & init_date <= t0 + 90, "started within 90 days", "not started")
+case_when(ev ~ 1L, !is.na(death_date) & death_date <= exit ~ 2L, TRUE ~ 0L)   # first TRUE wins
+coalesce(visit_days_prior_year, 0)        # NA becomes 0
+pmin(last_record, death_date, na.rm = TRUE) # earliest date, row by row, ignoring NA
+yrs <- function(x) as.numeric(x) / 365.25   # days between two dates -> years
+t0 - birth_date                             # subtracting dates gives days</pre></div>
+  <details class="predict"><summary>Predict, then reveal: what does this return?</summary><div>
+    <div class="code" data-lang="r"><pre>x <- c(3, NA, 25)
+ifelse(x >= 1 & x <= 20, "<20", format(x))</pre></div>
+    <p><code>"&lt;20"</code>, <code>NA</code>, <code>"25"</code>. Any comparison with NA gives NA, and ifelse passes NA through. Your <code>mask()</code> is only ever given real counts, so this doesn’t bite there; but always ask what a function does with NA.</p></div></details>
+  <details class="predict"><summary>Predict, then reveal: sum() of a condition</summary><div>
+    <div class="code" data-lang="r"><pre>status_hypo <- c(0, 1, 2, 1, 0)
+sum(status_hypo == 1)
+mean(status_hypo == 1)</pre></div>
+    <p><b>2</b> and <b>0.4</b>. A condition gives TRUE/FALSE; TRUE counts as 1. So <code>sum()</code> counts events and <code>mean()</code> gives their proportion. Your guides use this for event counts and for percentages like <code>started_within_90_pct</code>.</p></div></details>
+
+  <h3>Long to wide: pivot_wider()</h3>
+  <div class="card"><div data-widget="pivotViz"></div></div>
+
+  <h3>Functions and lists: doing the same thing many times</h3>
+  <div class="code" data-lang="r"><pre># a function: inputs in, result out
+add_fu <- function(d, suffix, event_date, cap = CAP) { ... ; d }
+
+# a list of data frames: one per question x imputation
+ana[["3a: start within 90 days vs not"]][[1]]   # 3a, imputation 1
+
+# lapply: run a function on every element, get a list back
+fits <- lapply(ana[[Q1]], function(di) coxph(..., data = di))
+
+# safe(): if one analysis errors, print "Skipped: ..." and return NULL
+safe <- function(expr) tryCatch(expr, error = function(e) { message("Skipped: ", conditionMessage(e)); NULL })</pre></div>
+  <div class="box read"><b>How to read <code>ana[[Q2]][[1]]</code></b><p><code>[[ ]]</code> takes one element out of a list. <code>ana</code> is a list of questions; each question is a list of imputed datasets. So <code>ana[[Q2]][[1]]</code> is the first imputed dataset of 3b. <code>lapply(ana[[Q2]], …)</code> fits the same model in all of them, and <code>pool_fits()</code> combines the results (Module 10).</p></div>
+  <div class="quiz" data-quiz="r-pipeline"></div>
+</section>
+
+<!-- ================= 7. DATA MANAGEMENT ================= -->
+<section class="lesson" data-id="data-mgmt" id="m-data-mgmt">
+  <div class="eyebrow"><span class="tag data">Data</span> Module 7</div>
+  <h2>Data management: grain, keys, time zero and episodes</h2>
+  <div class="goals"><h4>You will learn</h4><ul>
+    <li>to name the grain (what one row means) of every table in your pipeline;</li>
+    <li>why your guides key rows by <code>row_id</code>, not <code>person_id</code>;</li>
+    <li>how time zero, look-back windows, eligibility, episodes and masking work, on the practice data.</li></ul></div>
+
+  <h3>Grain: what does one row mean?</h3>
+  <p>Data management is mostly changing the grain of tables on purpose, and joining only tables whose grains you understand.</p>
+  <div class="result"><table class="grid"><thead><tr><th>Table in your guide</th><th>One row is…</th><th>Key</th></tr></thead><tbody>
+    <tr><td>OMOP records</td><td>one record</td><td>record ID</td></tr>
+    <tr><td><code>hypo_days</code></td><td>one person × day with hypoglycemia (worst level that day)</td><td>person_id + date</td></tr>
+    <tr><td>episodes (<code>make_episodes()</code>)</td><td>one hypoglycemia episode</td><td>person_id + ep</td></tr>
+    <tr><td><code>firsts_wide</code></td><td>one person, with a first-date column per condition</td><td>person_id</td></tr>
+    <tr><td><code>rows</code>, <code>cov</code>, <code>out</code></td><td>one person × question (3a or 3b)</td><td><b>row_id</b></td></tr>
+    <tr><td><code>base_long</code></td><td>one row_id × item</td><td>row_id + item</td></tr>
+    <tr><td>clone data <code>sp</code></td><td>one clone × interval (start–stop)</td><td>row_id + arm + interval</td></tr>
+  </tbody></table></div>
+  <div class="box why"><b>Why row_id and not person_id?</b><p>One person can be in both trials with different time zeros: their depression date in 3a, their first antidepressant in 3b. Covariates differ between those two time zeros, so the guides give each person × question its own <code>row_id</code> and join covariates by <code>row_id</code>. Joining by <code>person_id</code> would mix them up.</p></div>
+
+  <h3>Time zero and look-back windows, on a real timeline</h3>
+  <div class="card"><div data-widget="timeline"></div></div>
+  <div class="box read"><b>How to read it</b><ul>
+    <li>Teal shading is the year before time zero (medicines, visits); blue is the 2 years for labs; amber is the 90-day grace period.</li>
+    <li>Pick person 12: glipizide started 25 days before time zero, so <code>new_gld = 1</code>.</li>
+    <li>Pick person 1: two hypoglycemia days three days apart (2019-02-11 and 2019-02-14) become one severe episode.</li>
+  </ul></div>
+
+  <h3>Eligibility and the flow diagram</h3>
+  <p>Each eligibility rule removes rows, in a fixed order, and the guide records how many remain after each step. Here is that flow for Aim 3a, computed live on the practice data with the same rules.</p>
+  <div class="card"><div data-widget="funnel"></div></div>
+
+  <h3>Hypoglycemia: records → days → episodes</h3>
+  <div class="result"><table class="grid"><thead><tr><th>Level in your guides</th><th>Definition</th><th>ADA wording</th></tr></thead><tbody>
+    <tr><td>1</td><td>glucose 54–69 mg/dL, not in hospital</td><td>level 1</td></tr>
+    <tr><td>2</td><td>glucose &lt; 54 mg/dL, not in hospital</td><td>level 2 (clinically significant)</td></tr>
+    <tr><td>3</td><td>a hypoglycemia diagnosis code</td><td>no ADA equivalent: “coded hypoglycemia”</td></tr>
+    <tr><td>4</td><td>a hypoglycemia code at an ED or inpatient visit</td><td>closest to level 3 (severe)</td></tr>
+  </tbody></table></div>
+  <p>Each day keeps its worst level. Then days a few days apart are merged into episodes, because one event leaves several records. Change the dates or the gap below and watch the episode numbers change.</p>
+  <div class="card"><div data-widget="episodeBuilder"></div></div>
+
+  <h3>Missing values: three different meanings</h3>
+  <ul>
+    <li><b>Not prescribed:</b> no medicine record means the drug wasn’t given (assuming active care), so NA becomes 0.</li>
+    <li><b>Not measured:</b> no HbA1c in 2 years. The true value exists but is unknown, so it stays NA and is imputed (Module 8).</li>
+    <li><b>Not answered:</b> survey items skipped or “prefer not to answer” become NA and are imputed too.</li>
+  </ul>
+
+  <h3>Masking small counts</h3>
+  <div class="card"><div data-widget="maskChecker"></div></div>
+
+  <h3>Reproducibility</h3>
+  <ul>
+    <li><b>RUN prefix</b>: every saved table and query has a study prefix (<code>aim3hypo_…</code>), so studies never overwrite each other.</li>
+    <li><b>Saved SQL</b>: <code>run_query()</code> writes the exact SQL next to each result.</li>
+    <li><b>Seeds</b>: <code>seed = 2026</code> in <code>mice()</code> makes imputation repeatable; set one before bootstraps too.</li>
+    <li><b>One settings block</b>: grace period, cap, gap and age cut-off are named constants at the top of a part, so a change happens in one place.</li>
+  </ul>
+  <div class="quiz" data-quiz="data-mgmt"></div>
+</section>
+
+<!-- ================= 8. ANALYSIS DATA ================= -->
+<section class="lesson" data-id="analysis-data" id="m-analysis-data">
+  <div class="eyebrow"><span class="tag r">R</span> Module 8</div>
+  <h2>Building the analysis dataset: follow-up, censoring, intervals</h2>
+  <div class="goals"><h4>You will learn</h4><ul>
+    <li>how follow-up time and status are computed, and what censoring and competing events mean;</li>
+    <li>why risks are estimated with Aalen–Johansen;</li>
+    <li>counting-process (start–stop) data and survSplit;</li>
+    <li>what multiple imputation produces.</li></ul></div>
+
+  <h3>Time-to-event data</h3>
+  <p>“What % had hypoglycemia?” is the wrong question when people are followed for different lengths of time. Instead, each person contributes <b>time at risk</b> from time zero until the first of: the event, death, the end of their records, or the 5-year cap.</p>
+  <div class="result"><table class="grid"><thead><tr><th>status</th><th>Meaning</th><th>Example</th></tr></thead><tbody>
+    <tr><td>1</td><td>the event happened</td><td>first hypoglycemia episode on day 280</td></tr>
+    <tr><td>2</td><td>competing event: died first</td><td>death on day 200, no hypoglycemia before</td></tr>
+    <tr><td>0</td><td>censored: we stopped watching</td><td>records end on day 400, or the 5-year cap</td></tr>
+  </tbody></table></div>
+  <div class="annot" data-annot="fu"></div>
+  <div class="card"><h4><span class="tag r">R</span> fu() as a calculator</h4><div data-widget="fuCalc"></div></div>
+
+  <h3>Risks with a competing event</h3>
+  <p>Kaplan–Meier treats death like censoring, as if the dead might still have hypoglycemia later. So 1 − KM overstates the risk. The <b>Aalen–Johansen</b> estimator splits people into “had the event”, “died first” and “still at risk”, and gives the cumulative incidence: the proportion with the event by each time. In R, <code>survfit(Surv(time, factor(status, 0:2, c("censor", "event", "death"))) ~ arm, weights = w)</code> does this when the status is a factor with a censoring level first.</p>
+
+  <h3>Start–stop (counting-process) data</h3>
+  <p>When something changes during follow-up (a weight, a period, an exposure), a person’s time is split into intervals, one row each: <code>tstart</code>, <code>tstop</code>, <code>event</code>. The event is only marked on the interval in which it happens. Models then use <code>Surv(tstart, tstop, event)</code>.</p>
+  <div class="card"><h4><span class="tag r">R</span> survSplit at 6 months (Part 8, H3c)</h4><div data-widget="splitViz"></div></div>
+  <div class="box thesis"><b>In your thesis</b><ul>
+    <li><b>Aim 2:</b> follow-up is split where hypoglycemia exposure switches on (1 year after the first episode), so exposure is time-varying.</li>
+    <li><b>Aim 3a:</b> clone data are split into 15-day intervals during the grace period, because each interval gets its own censoring weight.</li>
+    <li><b>Aim 3c:</b> follow-up is split at 6 months to estimate early and later effects.</li>
+  </ul></div>
+
+  <h3>Multiple imputation</h3>
+  <p><code>mice()</code> fills each missing value with a plausible draw, predicted from everything else, including treatment and outcome. It does this <code>m</code> times (5 for drafts, 20 for the final run). Each completed dataset is analysed separately and the results are combined with Rubin’s rules (Module 10).</p>
+  <div class="code" data-lang="r"><pre>meth <- make.method(df);  meth[!names(meth) %in% IMPUTE] <- ""   # impute only these columns
+pred <- make.predictorMatrix(df); pred[, "row_id"] <- 0            # row_id predicts nothing
+imp  <- mice(df, m = M_IMP, method = meth, predictorMatrix = pred, maxit = 10, seed = 2026)
+complete(imp, 1)                                                   # the first filled-in dataset</pre></div>
+  <div class="box why"><b>Why the outcome is in the imputation model</b><p>If HbA1c is imputed without knowing who had hypoglycemia, the imputed values carry no link to the outcome, and the estimated effect of HbA1c (and anything correlated with it) is pulled toward zero. Using the event indicator and the Nelson–Aalen cumulative hazard as predictors keeps that link.</p></div>
+  <div class="quiz" data-quiz="analysis-data"></div>
+</section>
+
+<!-- ================= 9. CAUSAL DESIGN ================= -->
+<section class="lesson" data-id="causal" id="m-causal">
+  <div class="eyebrow"><span class="tag stats">Stats</span> Module 9</div>
+  <h2>Causal design: target trials, weights and clones</h2>
+  <div class="goals"><h4>You will learn</h4><ul>
+    <li>what a target trial protocol is, and why time zero must line up with eligibility and treatment;</li>
+    <li>propensity scores, IPTW, overlap weights, balance (SMD) and effective sample size;</li>
+    <li>immortal time bias, and how clone–censor–weight avoids it;</li>
+    <li>how the design handles hypoglycemia caused by diabetes drugs.</li></ul></div>
+
+  <h3>The target trial</h3>
+  <p>Before analysing observational data, write down the randomized trial you would run if you could, then copy it with the data. Your guides’ protocol tables do exactly that:</p>
+  <div class="result"><table class="grid"><thead><tr><th>Element</th><th>The question it answers</th><th>Aim 3a</th></tr></thead><tbody>
+    <tr><td>Eligibility</td><td>Who could join the trial?</td><td>age ≥ 50, treated type 2 diabetes, new depression, no antidepressant in the past year…</td></tr>
+    <tr><td>Strategies</td><td>What are the options compared?</td><td>start within 90 days vs don’t</td></tr>
+    <tr><td>Assignment</td><td>How is the option chosen?</td><td>as in practice; weights remove measured confounding</td></tr>
+    <tr><td>Time zero</td><td>When does follow-up start?</td><td>the first depression code</td></tr>
+    <tr><td>Outcome</td><td>What is counted?</td><td>first hypoglycemia episode starting after time zero</td></tr>
+    <tr><td>Follow-up</td><td>Until when?</td><td>event, death, last record or 5 years</td></tr>
+    <tr><td>Causal contrast</td><td>Which effect?</td><td>per protocol, with a 90-day grace period</td></tr>
+  </tbody></table></div>
+  <div class="box why"><b>The one rule that prevents most biases</b><p>At time zero, three things must happen together: the person meets eligibility, is assigned a strategy, and starts follow-up. If follow-up starts before treatment is known, or eligibility uses information from after time zero, bias creeps in. The best-known form is immortal time.</p></div>
+
+  <h3>Confounding and the propensity score (3b)</h3>
+  <p>Doctors don’t choose SSRIs at random: age, calendar year, insomnia and kidney function all play a part, and several of those also affect hypoglycemia. The <b>propensity score</b> is each person’s probability of getting an SSRI given their covariates, estimated with logistic regression (<code>glm(treat ~ ns(age, 3) + ns(cal_year, 3) + …, family = binomial())</code>). Weighting people by their propensity score makes the two arms look alike on every covariate in the model.</p>
+  <div class="card"><h4><span class="tag stats">Stats</span> Weights from one propensity score</h4><div data-widget="weightViz"></div></div>
+  <div class="code" data-lang="r" data-title="Part 7"><pre>ps    <- predict(glm(f, family = binomial(), data = di), type = "response")
+w_ato <- ifelse(treat == 1, 1 - ps, ps)           # overlap weights
+ess   <- function(w) sum(w)^2 / sum(w^2)          # effective sample size</pre></div>
+  <p><b>Effective sample size (ESS)</b>: weighting makes some people count more than others, so a weighted sample carries less information than the same number of equal people. ESS gives the equivalent number: for example, 1,000 weighted people might carry the information of about 850.</p>
+
+  <h3>Checking balance: the standardized mean difference</h3>
+  <p>For each covariate: the difference in means between arms, divided by the pooled SD. Unlike a p-value it doesn’t depend on sample size. After weighting, every |SMD| should be below about 0.1.</p>
+  <div class="card"><h4><span class="tag stats">Stats</span> SMD calculator</h4><div data-widget="smdCalc"></div></div>
+  <div class="box read"><b>Reading a balance table</b><p>A typical pattern: before weighting, people who start treatment differ from those who don’t, say an SMD of −0.20 for insulin use. After weighting, the largest |SMD| drops to about 0.04: balanced on everything measured. Overlap weights balance every covariate in the propensity model exactly, so after them all SMDs are essentially 0.</p></div>
+
+  <h3>Immortal time, and why 3a needs clones</h3>
+  <p>3a compares “start within 90 days” with “don’t”. Suppose you simply compared people who <i>did</i> start with people who didn’t, from the depression date. Someone who started on day 60 had to stay event-free and alive for 60 days in order to become a starter. Those 60 “immortal” days make starting look protective even when it does nothing.</p>
+  <p><b>Clone–censor–weight</b> fixes this:</p>
+  <ol>
+    <li><b>Clone:</b> at time zero, copy every person into both strategies. The arms are identical at baseline.</li>
+    <li><b>Censor:</b> stop following a clone on the day the person’s actions break its strategy. The “don’t start” clone is censored the day they start (if within 90 days); the “start” clone is censored at day 90 if they haven’t started.</li>
+    <li><b>Weight:</b> censoring isn’t random, because people who start differ from those who don’t. Each remaining clone is weighted by 1 / P(still following the strategy), from a model of who starts treatment, fitted in 15-day steps (<code>ccw_S()</code>). These are inverse probability of censoring weights (IPCW).</li>
+  </ol>
+  <div class="card"><h4><span class="tag stats">Stats</span> Follow one person’s two clones</h4><div data-widget="ccwSim"></div></div>
+  <div class="box read"><b>Try these</b><ul>
+    <li>Start day 45, event day 30: the event happens before any deviation, so it counts in <i>both</i> clones.</li>
+    <li>Start day 120: “start within 90 days” is broken at day 90, while “don’t start” is followed even though they start later.</li>
+    <li>Never starts, event day 200: only the “don’t start” clone sees the event.</li>
+  </ul></div>
+
+  <h3>Per-protocol vs intention to treat</h3>
+  <p><b>Intention to treat</b> (3b) follows everyone in the arm they started, whatever they do later: it estimates the effect of <i>starting</i> an SSRI vs bupropion/mirtazapine. <b>Per-protocol</b> (3a) estimates the effect of <i>following</i> a strategy, which needs censoring and weights for people who deviate.</p>
+
+  <div class="box thesis"><b>“Was this episode caused by insulin or by the antidepressant?”</b><p>The design never asks that about a single episode. Nearly every episode happens on a diabetes drug, in both arms. Because the arms are balanced on every diabetes drug class, a recently started drug (<code>new_gld</code>), HbA1c, kidney function and earlier hypoglycemia, the <i>difference</i> in risk between arms is the effect of the antidepressant strategy, including interactions such as an SSRI raising sulfonylurea levels.</p></div>
+  <div class="quiz" data-quiz="causal"></div>
+</section>
+
+<!-- ================= 10. ESTIMATION ================= -->
+<section class="lesson" data-id="estimation" id="m-estimation">
+  <div class="eyebrow"><span class="tag stats">Stats</span> Module 10</div>
+  <h2>Estimation and reading output</h2>
+  <div class="goals"><h4>You will learn</h4><ul>
+    <li>risks, risk differences, risk ratios and hazard ratios, and how they relate;</li>
+    <li>robust standard errors, the bootstrap and Rubin’s rules;</li>
+    <li>E-values and negative controls;</li>
+    <li>to read every column of your results tables, and the Aim 1 and Aim 2 measures.</li></ul></div>
+
+  <h3>Risks and differences: read them off the curves</h3>
+  <div class="card"><div data-widget="ciPlot"></div></div>
+  <ul>
+    <li><b>Risk at 2 years</b>: the height of a curve at 2 years. A made-up example: 4.0% if everyone started vs 3.0% if nobody did.</li>
+    <li><b>Risk difference</b>: 4.0 − 3.0 = <b>+1.0 percentage point</b>, 1 extra person per 100 over 2 years. This is the number that matters to patients.</li>
+    <li><b>Risk ratio</b>: 4.0 / 3.0 = 1.33.</li>
+    <li><b>Hazard ratio</b>: the ratio of instantaneous event rates, averaged over all follow-up, say 1.40 (1.02–1.92). It uses all follow-up (up to 5 years), so it has more events and a narrower interval than the 2-year risks.</li>
+  </ul>
+
+  <h3>The weighted Cox model</h3>
+  <div class="code" data-lang="r" data-title="3b (Part 7)"><pre>coxph(Surv(time, status == 1) ~ treat, data = d, weights = w, cluster = id)</pre></div>
+  <ul>
+    <li><code>Surv(time, status == 1)</code>: the event is status 1. Death (2) and censoring (0) both end follow-up here; the Cox model estimates the cause-specific hazard.</li>
+    <li><code>weights = w</code>: overlap weights (3b) or censoring weights (3a).</li>
+    <li><code>cluster = id</code>: <b>robust standard errors</b>. With weights, and with each 3a person appearing as two clones, ordinary SEs are too small; clustering by person fixes that.</li>
+    <li>The coefficient is a log hazard ratio: <code>exp(coef)</code> is the HR.</li>
+  </ul>
+
+  <h3>Uncertainty: bootstrap and Rubin’s rules</h3>
+  <p>The <b>bootstrap</b> redraws people with replacement (<code>di[sample(nrow(di), replace = TRUE), ]</code>), reruns the whole analysis, weights included, and repeats B times. The spread of the B estimates is the standard error. It is used for the risks, which have no simple formula once weights are involved.</p>
+  <p><b>Rubin’s rules</b> then combine the results from the imputed datasets:</p>
+  <div class="card"><h4><span class="tag stats">Stats</span> Rubin’s rules calculator</h4><div data-widget="rubinCalc"></div></div>
+
+  <h3>Read your results table, column by column</h3>
+  <div class="card"><div data-widget="outputReader"></div></div>
+
+  <h3>How sure can we be? E-values and negative controls</h3>
+  <p>Weights only balance what was measured. Depression severity isn’t in the EHR. The <b>E-value</b> asks how strong an unmeasured confounder would need to be to explain the result away.</p>
+  <div class="card"><h4><span class="tag stats">Stats</span> E-value calculator</h4><div data-widget="evalue"></div></div>
+  <p>A <b>negative control outcome</b> is something treatment can’t plausibly cause. A cataract HR near 1, say 0.97 (0.80–1.18), shows no sign that starters simply had more diagnoses recorded (detection bias). Note what it can’t rule out: confounding specific to hypoglycemia, such as frailty.</p>
+
+  <h3>The measures in Aims 1 and 2</h3>
+  <ul>
+    <li><b>Aim 1, rate ratio (Poisson regression):</b> hypoglycemia episodes per person-year in each year before the index date, cases vs controls. The model has the form <code>glm(n_hypo ~ case * ns(year, …) + matching factors + offset(log(py)), family = poisson)</code>; the offset turns counts into rates, and the case × year term lets the rate ratio change across the 10 years.</li>
+    <li><b>Aim 2, RERI (additive interaction):</b> with HR₁₁ for both hypoglycemia and depression, HR₁₀ and HR₀₁ for each alone, RERI = HR₁₁ − HR₁₀ − HR₀₁ + 1. A RERI of 0.5, for example, means people with both had 0.5 “extra” relative risk beyond the sum of the two separate effects: public-health synergy, even without multiplicative interaction.</li>
+  </ul>
+  <div class="box thesis"><b>What can leave the Workbench</b><p>Every saved results file (<code>aim3_*.csv</code>, the forest plot) holds model estimates or masked counts. Before exporting anything else, check for counts of 1–20, and for rates or percentages computed from such counts, which can reveal them.</p></div>
+  <div class="quiz" data-quiz="estimation"></div>
+</section>
+
+<!-- ================= 11. CAPSTONE ================= -->
+<section class="lesson" data-id="capstone" id="m-capstone">
+  <div class="eyebrow"><span class="tag data">Capstone</span> Module 11</div>
+  <h2>Capstone: follow one person through Aim 3</h2>
+  <p class="prose">Person 12 is made up, but every step below uses the rules in your Aim 3 guide, run live on the practice data. Step through, and before each step try to say what will happen.</p>
+  <div data-widget="capstone"></div>
+
+  <h3>Can you explain these in your own words?</h3>
+  <ol>
+    <li>Why the guides join diagnoses on <code>condition_source_concept_id</code>, and drugs by matching <code>concept_name</code>. <a href="#omop">Module 1</a></li>
+    <li>What <code>REGEXP_CONTAINS(c.concept_code, r'^(F32|F33|F34\.1)')</code> matches, and what it doesn’t. <a href="#sql-basics">Module 2</a></li>
+    <li>Why a JOIN can repeat rows, and when you need a LEFT JOIN. <a href="#sql-joins">Module 3</a></li>
+    <li>Why medicines are counted strictly before time zero but labs on the day of time zero. <a href="#sql-advanced">Module 4</a></li>
+    <li>What <code>{CDR}</code> and <code>pop_cte()</code> do in your queries. <a href="#thesis-sql">Module 5</a></li>
+    <li>What happens to <code>run_query()</code> if you change a query but not its name. <a href="#r-pipeline">Module 6</a></li>
+    <li>Why rows are keyed by <code>row_id</code>, and how days become episodes. <a href="#data-mgmt">Module 7</a></li>
+    <li>The difference between status 0, 1 and 2, and why risks use Aalen–Johansen. <a href="#analysis-data">Module 8</a></li>
+    <li>What immortal time is, and how clones remove it. <a href="#causal">Module 9</a></li>
+    <li>Why a hazard ratio can have a CI excluding 1 while the 2-year risk difference doesn’t. <a href="#estimation">Module 10</a></li>
+  </ol>
+  <div class="quiz" data-quiz="capstone"></div>
+  <div class="sqlbox" data-ex="free"></div>
+</section>
+
+  </main>
+</div>
+<script src="sql-asm.js"></script>
+<script>
+/* Practice database: 12 made-up people in OMOP tables, shaped like the All of Us Registered Tier.
+   Nothing here is real data. Dates are text 'YYYY-MM-DD', as BigQuery returns them. */
+const DB = {
+  concept: {
+    cols: ["concept_id", "concept_name", "domain_id", "vocabulary_id", "concept_code"],
+    rows: [
+      [1001, "Type 2 diabetes mellitus without complications", "Condition", "ICD10CM", "E11.9"],
+      [1002, "Type 2 diabetes mellitus with hypoglycemia without coma", "Condition", "ICD10CM", "E11.649"],
+      [1003, "Major depressive disorder, single episode, unspecified", "Condition", "ICD10CM", "F32.9"],
+      [1004, "Major depressive disorder, recurrent, moderate", "Condition", "ICD10CM", "F33.1"],
+      [1005, "Hypoglycemia, unspecified", "Condition", "ICD10CM", "E16.2"],
+      [1006, "Alzheimer's disease, unspecified", "Condition", "ICD10CM", "G30.9"],
+      [1007, "Unspecified dementia without behavioral disturbance", "Condition", "ICD10CM", "F03.90"],
+      [1008, "Age-related nuclear cataract, bilateral", "Condition", "ICD10CM", "H25.13"],
+      [1009, "Chronic kidney disease, stage 3a", "Condition", "ICD10CM", "N18.31"],
+      [1010, "Generalized anxiety disorder", "Condition", "ICD10CM", "F41.1"],
+      [1011, "Essential (primary) hypertension", "Condition", "ICD10CM", "I10"],
+      [1012, "Diabetes mellitus without mention of complication, type II", "Condition", "ICD9CM", "250.00"],
+      [1013, "Depressive disorder, not elsewhere classified", "Condition", "ICD9CM", "311"],
+      [2001, "sertraline 50 MG Oral Tablet", "Drug", "RxNorm", "312941"],
+      [2002, "escitalopram 10 MG Oral Tablet", "Drug", "RxNorm", "349332"],
+      [2003, "bupropion hydrochloride 150 MG 24HR Extended Release Oral Tablet", "Drug", "RxNorm", "993541"],
+      [2004, "mirtazapine 15 MG Oral Tablet", "Drug", "RxNorm", "311725"],
+      [2005, "naltrexone hydrochloride 8 MG / bupropion hydrochloride 90 MG Extended Release Oral Tablet", "Drug", "RxNorm", "1593110"],
+      [2006, "duloxetine 60 MG Delayed Release Oral Capsule", "Drug", "RxNorm", "596930"],
+      [2007, "insulin glargine 100 UNT/ML Injectable Solution", "Drug", "RxNorm", "261551"],
+      [2008, "glipizide 5 MG Oral Tablet", "Drug", "RxNorm", "310490"],
+      [2009, "metformin hydrochloride 500 MG Oral Tablet", "Drug", "RxNorm", "861007"],
+      [2010, "sitagliptin 100 MG / metformin hydrochloride 1000 MG Oral Tablet", "Drug", "RxNorm", "861819"],
+      [2011, "donepezil hydrochloride 5 MG Oral Tablet", "Drug", "RxNorm", "997221"],
+      [2012, "trazodone hydrochloride 50 MG Oral Tablet", "Drug", "RxNorm", "856377"],
+      [3001, "Hemoglobin A1c/Hemoglobin.total in Blood", "Measurement", "LOINC", "4548-4"],
+      [3002, "Glucose [Mass/volume] in Serum or Plasma", "Measurement", "LOINC", "2345-7"],
+      [3003, "Creatinine [Mass/volume] in Serum or Plasma", "Measurement", "LOINC", "2160-0"],
+      [3004, "Body mass index (BMI) [Ratio]", "Measurement", "LOINC", "39156-5"],
+      [9201, "Inpatient Visit", "Visit", "Visit", "IP"],
+      [9202, "Outpatient Visit", "Visit", "Visit", "OP"],
+      [9203, "Emergency Room Visit", "Visit", "Visit", "ER"],
+      [8507, "MALE", "Gender", "Gender", "M"],
+      [8532, "FEMALE", "Gender", "Gender", "F"],
+      [8527, "White", "Race", "Race", "5"],
+      [8516, "Black or African American", "Race", "Race", "3"],
+      [8515, "Asian", "Race", "Race", "2"],
+      [38003563, "Hispanic or Latino", "Ethnicity", "Ethnicity", "Hispanic"],
+      [38003564, "Not Hispanic or Latino", "Ethnicity", "Ethnicity", "Not Hispanic"]
+    ]
+  },
+  person: {
+    cols: ["person_id", "gender_concept_id", "year_of_birth", "birth_datetime", "race_concept_id", "ethnicity_concept_id"],
+    rows: [
+      [1, 8532, 1950, "1950-03-14", 8527, 38003564],
+      [2, 8507, 1946, "1946-09-02", 8516, 38003564],
+      [3, 8532, 1958, "1958-01-21", 8527, 38003563],
+      [4, 8507, 1960, "1960-06-30", 8515, 38003564],
+      [5, 8532, 1955, "1955-11-11", 8516, 38003564],
+      [6, 8507, 1952, "1952-04-05", 8527, 38003564],
+      [7, 8532, 1965, "1965-08-19", 8527, 38003563],
+      [8, 8507, 1948, "1948-02-27", 8516, 38003564],
+      [9, 8532, 1962, "1962-12-01", 8527, 38003564],
+      [10, 8507, 1944, "1944-05-17", 8527, 38003564],
+      [11, 8532, 1972, "1972-10-08", 8515, 38003564],
+      [12, 8507, 1951, "1951-07-23", 8516, 38003564]
+    ]
+  },
+  visit_occurrence: {
+    cols: ["visit_occurrence_id", "person_id", "visit_concept_id", "visit_start_date"],
+    rows: [
+      [101, 1, 9202, "2011-01-05"], [102, 1, 9202, "2012-03-10"], [103, 1, 9202, "2017-11-20"], [104, 1, 9202, "2018-05-02"],
+      [105, 1, 9203, "2019-02-11"], [106, 1, 9202, "2019-02-14"], [107, 1, 9202, "2020-03-01"],
+      [201, 2, 9202, "2009-06-01"], [202, 2, 9202, "2010-04-12"], [203, 2, 9202, "2017-03-01"], [204, 2, 9202, "2017-09-15"],
+      [205, 2, 9201, "2018-06-01"], [206, 2, 9202, "2021-04-10"],
+      [301, 3, 9202, "2008-02-01"], [302, 3, 9202, "2009-05-05"], [303, 3, 9202, "2016-06-01"], [304, 3, 9202, "2016-11-03"], [305, 3, 9202, "2017-01-10"],
+      [401, 4, 9202, "2014-01-10"], [402, 4, 9202, "2015-03-03"], [403, 4, 9202, "2018-12-01"], [404, 4, 9202, "2019-02-01"], [405, 4, 9202, "2019-08-20"],
+      [501, 5, 9202, "2012-02-02"], [502, 5, 9202, "2013-07-07"], [503, 5, 9202, "2020-01-01"], [504, 5, 9202, "2020-07-07"], [505, 5, 9202, "2021-09-09"],
+      [601, 6, 9202, "2010-10-10"], [602, 6, 9202, "2011-11-11"], [603, 6, 9202, "2015-09-01"], [604, 6, 9202, "2016-03-15"],
+      [701, 7, 9202, "2013-01-01"], [702, 7, 9202, "2014-02-02"],
+      [801, 8, 9202, "2014-01-01"], [802, 8, 9202, "2015-06-06"],
+      [901, 9, 9202, "2015-01-01"], [902, 9, 9202, "2016-04-04"], [903, 9, 9202, "2018-09-01"], [904, 9, 9202, "2018-10-10"],
+      [1001, 10, 9202, "2008-01-01"], [1002, 10, 9202, "2009-03-03"], [1003, 10, 9202, "2010-02-01"],
+      [1101, 11, 9202, "2017-01-01"], [1102, 11, 9202, "2018-02-02"], [1103, 11, 9202, "2019-03-03"],
+      [1201, 12, 9202, "2011-05-05"], [1202, 12, 9202, "2012-06-06"], [1203, 12, 9202, "2017-01-01"], [1204, 12, 9202, "2017-03-10"],
+      [1205, 12, 9202, "2017-04-04"], [1206, 12, 9203, "2017-06-01"], [1207, 12, 9202, "2018-01-15"]
+    ]
+  },
+  condition_occurrence: {
+    cols: ["condition_occurrence_id", "person_id", "condition_source_concept_id", "condition_start_date", "visit_occurrence_id"],
+    rows: [
+      [1, 1, 1011, "2011-01-05", 101], [2, 1, 1001, "2012-03-10", 102], [3, 1, 1001, "2017-11-20", 103], [4, 1, 1003, "2018-05-02", 104],
+      [5, 1, 1003, "2018-07-10", null], [6, 1, 1005, "2019-02-11", 105], [7, 1, 1005, "2019-02-14", 106],
+      [8, 2, 1001, "2010-04-12", 202], [9, 2, 1009, "2016-02-02", null], [10, 2, 1003, "2017-09-15", 204], [11, 2, 1002, "2018-06-01", 205],
+      [12, 2, 1007, "2021-04-10", 206],
+      [13, 3, 1012, "2009-05-05", 302], [14, 3, 1001, "2016-11-03", 304], [15, 3, 1003, "2016-11-03", 304], [16, 3, 1010, "2016-11-03", 304],
+      [17, 4, 1001, "2015-03-03", 402], [18, 4, 1004, "2019-02-01", 404],
+      [19, 5, 1001, "2013-07-07", 502], [20, 5, 1010, "2019-05-05", null], [21, 5, 1003, "2020-07-07", 504], [22, 5, 1008, "2021-09-09", 505],
+      [23, 6, 1001, "2011-11-11", 602], [24, 6, 1003, "2016-03-15", 604],
+      [25, 7, 1001, "2014-02-02", 702],
+      [26, 8, 1013, "2015-06-06", 802],
+      [27, 9, 1001, "2016-04-04", 902], [28, 9, 1003, "2018-10-10", 904],
+      [29, 10, 1001, "2009-03-03", 1002], [30, 10, 1003, "2010-02-01", 1003],
+      [31, 11, 1001, "2018-02-02", 1102], [32, 11, 1003, "2019-03-03", 1103],
+      [33, 12, 1001, "2012-06-06", 1202], [34, 12, 1003, "2017-04-04", 1205], [35, 12, 1005, "2017-06-01", 1206], [36, 12, 1005, "2018-01-15", 1207]
+    ]
+  },
+  drug_exposure: {
+    cols: ["drug_exposure_id", "person_id", "drug_concept_id", "drug_exposure_start_date"],
+    rows: [
+      [1, 1, 2009, "2012-03-10"], [2, 1, 2009, "2017-11-20"], [3, 1, 2009, "2018-03-15"], [4, 1, 2001, "2018-05-20"], [5, 1, 2001, "2018-08-20"], [6, 1, 2001, "2018-11-20"],
+      [7, 2, 2007, "2010-05-01"], [8, 2, 2008, "2016-01-10"], [9, 2, 2007, "2017-03-01"], [10, 2, 2007, "2017-08-01"], [11, 2, 2008, "2017-08-01"], [12, 2, 2011, "2021-05-02"],
+      [13, 3, 2009, "2016-06-01"], [14, 3, 2008, "2016-06-01"], [15, 3, 2003, "2017-03-01"],
+      [16, 4, 2009, "2015-03-03"], [17, 4, 2009, "2018-09-01"], [18, 4, 2010, "2018-12-01"], [19, 4, 2004, "2019-02-01"],
+      [20, 5, 2009, "2013-07-07"], [21, 5, 2009, "2020-01-01"], [22, 5, 2012, "2020-07-07"], [23, 5, 2002, "2020-08-01"],
+      [24, 6, 2007, "2015-09-01"], [25, 6, 2006, "2016-04-01"],
+      [26, 7, 2009, "2014-02-02"],
+      [27, 8, 2001, "2015-06-20"],
+      [28, 9, 2009, "2017-10-01"], [29, 9, 2009, "2018-09-01"], [30, 9, 2005, "2018-11-01"],
+      [31, 10, 2008, "2009-03-03"], [32, 10, 2001, "2009-06-15"],
+      [33, 11, 2009, "2018-02-02"], [34, 11, 2001, "2019-03-03"],
+      [35, 12, 2007, "2016-02-01"], [36, 12, 2007, "2017-01-01"], [37, 12, 2008, "2017-03-10"], [38, 12, 2004, "2017-04-20"]
+    ]
+  },
+  measurement: {
+    cols: ["measurement_id", "person_id", "measurement_concept_id", "measurement_date", "value_as_number", "unit_source_value", "visit_occurrence_id"],
+    rows: [
+      [1, 1, 3001, "2017-11-20", 7.8, "%", 103], [2, 1, 3001, "2018-04-30", 8.1, "%", null], [3, 1, 3003, "2018-04-30", 0.9, "mg/dL", null],
+      [4, 1, 3004, "2018-04-30", 31.2, "kg/m2", null], [5, 1, 3002, "2019-02-11", 48, "mg/dL", 105],
+      [6, 2, 3001, "2017-06-01", 7.1, "%", null], [7, 2, 3003, "2017-06-01", 1.6, "mg/dL", null], [8, 2, 3002, "2018-06-01", 41, "mg/dL", 205],
+      [9, 3, 3001, "2016-10-01", 6.9, "%", null],
+      [10, 4, 3001, "2018-12-01", 7.4, "%", 403], [11, 4, 3002, "2019-08-20", 52, "mg/dL", 405],
+      [12, 5, 3001, "2020-06-01", 8.4, "%", null],
+      [13, 12, 3001, "2017-03-01", 9.2, "%", null], [14, 12, 3002, "2017-06-01", 45, "mg/dL", 1206], [15, 12, 3002, "2017-09-09", 64, "mg/dL", null]
+    ]
+  },
+  death: {
+    cols: ["person_id", "death_date"],
+    rows: [[2, "2022-01-15"], [10, "2014-05-01"]]
+  }
+};
+
+/* Column types for CREATE TABLE */
+const DB_TYPES = { concept_name: "TEXT", domain_id: "TEXT", vocabulary_id: "TEXT", concept_code: "TEXT", birth_datetime: "TEXT",
+  visit_start_date: "TEXT", condition_start_date: "TEXT", drug_exposure_start_date: "TEXT", measurement_date: "TEXT",
+  unit_source_value: "TEXT", death_date: "TEXT", value_as_number: "REAL" };
+
+/* ---------- SQL exercises (checked against the practice database) ---------- */
+const DEP_CODES = `(c.vocabulary_id = 'ICD10CM' AND REGEXP_CONTAINS(c.concept_code, r'^(F32|F33|F34\\.1)'))
+     OR (c.vocabulary_id = 'ICD9CM' AND REGEXP_CONTAINS(c.concept_code, r'^(296\\.[23]|300\\.4|311)'))`;
+const EXERCISES = {
+  "omop-free": { title: "Look around", task: "Run the query, then change <code>person</code> to another table name (for example <code>drug_exposure</code>) and run it again.", start: "SELECT *\nFROM person\nLIMIT 5;" },
+
+  s1: { title: "Exercise 2.1: choose columns and rows", task: "List <b>person_id</b> and <b>year_of_birth</b> for everyone born <b>before 1955</b>, oldest first.",
+    start: "SELECT person_id, year_of_birth\nFROM person\n-- add WHERE and ORDER BY\n",
+    solution: "SELECT person_id, year_of_birth\nFROM person\nWHERE year_of_birth < 1955\nORDER BY year_of_birth;", ordered: true,
+    hint: "WHERE year_of_birth < 1955 keeps the rows; ORDER BY year_of_birth sorts smallest (oldest) first.",
+    explain: "WHERE filters rows before anything else happens; ORDER BY only changes the order of what is shown." },
+  s2: { title: "Exercise 2.2: count rows", task: "How many drug records are there in <b>drug_exposure</b>? Return one number in a column called <b>n</b>.",
+    start: "SELECT \nFROM drug_exposure;", solution: "SELECT COUNT(*) AS n\nFROM drug_exposure;", hint: "COUNT(*) counts rows; AS n names the column." },
+  s3: { title: "Exercise 2.3: one row per person", task: "Which people have at least one drug record? Return one row per <b>person_id</b>, sorted.",
+    start: "SELECT person_id\nFROM drug_exposure;", solution: "SELECT DISTINCT person_id\nFROM drug_exposure\nORDER BY person_id;", ordered: true,
+    hint: "Without DISTINCT you get one row per drug record, so people with many prescriptions repeat.",
+    explain: "This is the shape of your guides’ DM_PEOPLE query: SELECT DISTINCT person_id gives a list of people, which can then sit inside WHERE person_id IN (…)." },
+  s4: { title: "Exercise 2.4: find codes with a pattern", task: "Find the diagnosis concepts whose ICD-10 code starts with <b>F32</b> or <b>F33</b> (depression). Show <b>concept_id, concept_code, concept_name</b>.",
+    start: "SELECT concept_id, concept_code, concept_name\nFROM concept\nWHERE vocabulary_id = 'ICD10CM'\n  AND REGEXP_CONTAINS(concept_code, r'^(F32|F33)');",
+    solution: "SELECT concept_id, concept_code, concept_name\nFROM concept\nWHERE vocabulary_id = 'ICD10CM'\n  AND REGEXP_CONTAINS(concept_code, r'^(F32|F33)');",
+    hint: "The start query already works: run it, then try changing the pattern to r'^E11' (type 2 diabetes) or r'^(E16|E11\\.64)' (hypoglycemia).",
+    explain: "^ means “starts with”, | means “or”, and \\. means a literal dot. This is exactly how codes_sql() in your guides turns a code list into concept IDs." },
+
+  j1: { title: "Exercise 3.1: join records to their codes", task: "Show person 1’s diagnoses: <b>person_id, condition_start_date, concept_code, concept_name</b>, in date order.",
+    start: "SELECT co.person_id, co.condition_start_date, c.concept_code, c.concept_name\nFROM condition_occurrence AS co\nJOIN concept AS c ON -- which columns match?\nWHERE co.person_id = 1\nORDER BY co.condition_start_date;",
+    solution: "SELECT co.person_id, co.condition_start_date, c.concept_code, c.concept_name\nFROM condition_occurrence AS co\nJOIN concept AS c ON c.concept_id = co.condition_source_concept_id\nWHERE co.person_id = 1\nORDER BY co.condition_start_date;", ordered: true,
+    hint: "The record stores an ID (condition_source_concept_id); the concept table stores what that ID means (concept_id)." },
+  j2: { title: "Exercise 3.2: count per person", task: "Count diagnosis records per person: <b>person_id</b> and <b>n</b>, sorted by person_id.",
+    start: "SELECT person_id, COUNT(*) AS n\nFROM condition_occurrence\n-- group the rows\n",
+    solution: "SELECT person_id, COUNT(*) AS n\nFROM condition_occurrence\nGROUP BY person_id\nORDER BY person_id;", ordered: true, hint: "GROUP BY person_id makes COUNT(*) count within each person." },
+  j3: { title: "Exercise 3.3: first depression date per person", task: "For each person with a depression code (ICD-10 F32, F33, F34.1 or ICD-9 296.2x, 296.3x, 300.4, 311), return <b>person_id</b> and the <b>first_date</b> it was coded. This is time zero for Aim 3a.",
+    start: "SELECT co.person_id, MIN(co.condition_start_date) AS first_date\nFROM condition_occurrence AS co\nJOIN concept AS c ON c.concept_id = co.condition_source_concept_id\nWHERE " + DEP_CODES + "\n-- one row per person?\n",
+    solution: "SELECT co.person_id, MIN(co.condition_start_date) AS first_date\nFROM condition_occurrence AS co\nJOIN concept AS c ON c.concept_id = co.condition_source_concept_id\nWHERE " + DEP_CODES + "\nGROUP BY co.person_id\nORDER BY co.person_id;", ordered: true,
+    hint: "Add GROUP BY co.person_id: MIN() then picks the earliest date within each person.",
+    explain: "Person 8’s depression is coded in ICD-9 (311), which is why both vocabularies are searched. Your first_dates_sql() does this for 15 condition sets at once." },
+  j4: { title: "Exercise 3.4: keep everyone (LEFT JOIN)", task: "List every person with their <b>death_date</b> (NULL if there is no death record): <b>person_id, death_date</b>.",
+    start: "SELECT p.person_id, d.death_date\nFROM person AS p\nJOIN death AS d ON d.person_id = p.person_id;",
+    solution: "SELECT p.person_id, d.death_date\nFROM person AS p\nLEFT JOIN death AS d ON d.person_id = p.person_id\nORDER BY p.person_id;",
+    hint: "The start query only returns 2 rows, because a plain JOIN drops people without a match. Which join keeps all rows from the left table?" },
+  j5: { title: "Exercise 3.5: filter groups (HAVING)", task: "Which people have <b>at least 6 distinct visit days</b>? Return <b>person_id</b> and <b>visit_days</b>.",
+    start: "SELECT person_id, COUNT(DISTINCT visit_start_date) AS visit_days\nFROM visit_occurrence\nGROUP BY person_id\n",
+    solution: "SELECT person_id, COUNT(DISTINCT visit_start_date) AS visit_days\nFROM visit_occurrence\nGROUP BY person_id\nHAVING COUNT(DISTINCT visit_start_date) >= 6;",
+    hint: "WHERE filters rows before grouping; HAVING filters the groups after counting.", explain: "COUNT(DISTINCT date) counts days, not records: two visits on one day count once. Your baseline query counts visit days the same way." },
+
+  a1: { title: "Exercise 4.1: a CTE, step by step", task: "Using two CTEs (<code>dep</code> = first depression date, <code>dm</code> = first type 2 diabetes date), return the people whose diabetes was coded <b>on or before</b> their first depression code: <b>person_id, t0, dm_first</b>.",
+    start: "WITH dep AS (\n  SELECT co.person_id, MIN(co.condition_start_date) AS t0\n  FROM condition_occurrence AS co\n  JOIN concept AS c ON c.concept_id = co.condition_source_concept_id\n  WHERE REGEXP_CONTAINS(c.concept_code, r'^(F32|F33|311)')\n  GROUP BY co.person_id),\ndm AS (\n  -- the same for diabetes: ICD-10 E11, ICD-9 250\n)\nSELECT dep.person_id, dep.t0, dm.dm_first\nFROM dep\nJOIN dm ON dm.person_id = dep.person_id\nWHERE dm.dm_first <= dep.t0\nORDER BY dep.person_id;",
+    solution: "WITH dep AS (\n  SELECT co.person_id, MIN(co.condition_start_date) AS t0\n  FROM condition_occurrence AS co\n  JOIN concept AS c ON c.concept_id = co.condition_source_concept_id\n  WHERE REGEXP_CONTAINS(c.concept_code, r'^(F32|F33|311)')\n  GROUP BY co.person_id),\ndm AS (\n  SELECT co.person_id, MIN(co.condition_start_date) AS dm_first\n  FROM condition_occurrence AS co\n  JOIN concept AS c ON c.concept_id = co.condition_source_concept_id\n  WHERE REGEXP_CONTAINS(c.concept_code, r'^(E11|250)')\n  GROUP BY co.person_id)\nSELECT dep.person_id, dep.t0, dm.dm_first\nFROM dep\nJOIN dm ON dm.person_id = dep.person_id\nWHERE dm.dm_first <= dep.t0\nORDER BY dep.person_id;", ordered: true,
+    hint: "Copy the dep CTE, rename the column to dm_first and change the pattern to r'^(E11|250)'.",
+    explain: "This is the guide’s “Type 2 diabetes coded by time zero” step. Person 8 drops (no diabetes code)." },
+  a2: { title: "Exercise 4.2: a window of time after time zero", task: "For each person’s first depression date (t0), list antidepressant records in the <b>90 days after</b> (t0 itself included): <b>person_id, t0, drug_exposure_start_date, concept_name</b>. Leave out the bupropion/naltrexone weight-loss tablet.",
+    start: "WITH dep AS (\n  SELECT co.person_id, MIN(co.condition_start_date) AS t0\n  FROM condition_occurrence AS co\n  JOIN concept AS c ON c.concept_id = co.condition_source_concept_id\n  WHERE REGEXP_CONTAINS(c.concept_code, r'^(F32|F33|311)')\n  GROUP BY co.person_id)\nSELECT dep.person_id, dep.t0, de.drug_exposure_start_date, c.concept_name\nFROM dep\nJOIN drug_exposure AS de ON de.person_id = dep.person_id\nJOIN concept AS c ON c.concept_id = de.drug_concept_id\nWHERE REGEXP_CONTAINS(LOWER(c.concept_name), r'sertraline|fluoxetine|citalopram|paroxetine|fluvoxamine|venlafaxine|duloxetine|bupropion|mirtazapine')\n  -- add: not naltrexone, and the date window\nORDER BY dep.person_id, de.drug_exposure_start_date;",
+    solution: "WITH dep AS (\n  SELECT co.person_id, MIN(co.condition_start_date) AS t0\n  FROM condition_occurrence AS co\n  JOIN concept AS c ON c.concept_id = co.condition_source_concept_id\n  WHERE REGEXP_CONTAINS(c.concept_code, r'^(F32|F33|311)')\n  GROUP BY co.person_id)\nSELECT dep.person_id, dep.t0, de.drug_exposure_start_date, c.concept_name\nFROM dep\nJOIN drug_exposure AS de ON de.person_id = dep.person_id\nJOIN concept AS c ON c.concept_id = de.drug_concept_id\nWHERE REGEXP_CONTAINS(LOWER(c.concept_name), r'sertraline|fluoxetine|citalopram|paroxetine|fluvoxamine|venlafaxine|duloxetine|bupropion|mirtazapine')\n  AND NOT REGEXP_CONTAINS(LOWER(c.concept_name), r'naltrexone')\n  AND de.drug_exposure_start_date >= dep.t0\n  AND de.drug_exposure_start_date <= DATE_ADD(dep.t0, INTERVAL 90 DAY)\nORDER BY dep.person_id, de.drug_exposure_start_date;", ordered: true,
+    hint: "Two date conditions: on or after dep.t0, and on or before DATE_ADD(dep.t0, INTERVAL 90 DAY).",
+    explain: "Person 3 started bupropion on day 118 (outside the window), person 10’s sertraline came before t0, and person 9’s only “bupropion” is the weight-loss tablet. In your guide this step is done in R (first_ad), but the logic is the same." },
+  a3: { title: "Exercise 4.3: the latest value before time zero", task: "For each person’s t0 (first depression date), return the <b>most recent HbA1c</b> (LOINC 4548-4) measured on or before t0 and within the 2 years before it: <b>person_id, t0, measurement_date, hba1c</b>.",
+    start: "WITH dep AS (\n  SELECT co.person_id, MIN(co.condition_start_date) AS t0\n  FROM condition_occurrence AS co\n  JOIN concept AS c ON c.concept_id = co.condition_source_concept_id\n  WHERE REGEXP_CONTAINS(c.concept_code, r'^(F32|F33|311)')\n  GROUP BY co.person_id),\na1c AS (\n  SELECT dep.person_id, dep.t0, m.measurement_date, m.value_as_number,\n         ROW_NUMBER() OVER (PARTITION BY dep.person_id ORDER BY m.measurement_date DESC) AS rn\n  FROM dep\n  JOIN measurement AS m ON m.person_id = dep.person_id\n  JOIN concept AS c ON c.concept_id = m.measurement_concept_id\n  WHERE c.concept_code = '4548-4'\n    AND m.measurement_date <= dep.t0\n    AND m.measurement_date > DATE_SUB(dep.t0, INTERVAL 730 DAY))\nSELECT person_id, t0, measurement_date, value_as_number AS hba1c\nFROM a1c\n-- keep only the latest one per person\nORDER BY person_id;",
+    solution: "WITH dep AS (\n  SELECT co.person_id, MIN(co.condition_start_date) AS t0\n  FROM condition_occurrence AS co\n  JOIN concept AS c ON c.concept_id = co.condition_source_concept_id\n  WHERE REGEXP_CONTAINS(c.concept_code, r'^(F32|F33|311)')\n  GROUP BY co.person_id),\na1c AS (\n  SELECT dep.person_id, dep.t0, m.measurement_date, m.value_as_number,\n         ROW_NUMBER() OVER (PARTITION BY dep.person_id ORDER BY m.measurement_date DESC) AS rn\n  FROM dep\n  JOIN measurement AS m ON m.person_id = dep.person_id\n  JOIN concept AS c ON c.concept_id = m.measurement_concept_id\n  WHERE c.concept_code = '4548-4'\n    AND m.measurement_date <= dep.t0\n    AND m.measurement_date > DATE_SUB(dep.t0, INTERVAL 730 DAY))\nSELECT person_id, t0, measurement_date, value_as_number AS hba1c\nFROM a1c\nWHERE rn = 1\nORDER BY person_id;", ordered: true,
+    hint: "rn = 1 is the newest row in each person’s group, because the window is ordered by date DESC.",
+    explain: "BigQuery can also do this with ARRAY_AGG(value ORDER BY date DESC LIMIT 1)[OFFSET(0)], which is what lab_last in your baseline query uses. People without an HbA1c in the window simply have no row; in R that becomes NA and is imputed." },
+  a4: { title: "Exercise 4.4: stack results into a long table (UNION ALL)", task: "Build a long table like the baseline query returns: one row per person × item. Item <b>'med_insulin'</b> (value 1) for anyone with an insulin record, and item <b>'visit_days'</b> (value = number of distinct visit days) for everyone with visits. Columns: <b>person_id, item, value</b>.",
+    start: "SELECT DISTINCT de.person_id, 'med_insulin' AS item, 1 AS value\nFROM drug_exposure AS de\nJOIN concept AS c ON c.concept_id = de.drug_concept_id\nWHERE REGEXP_CONTAINS(LOWER(c.concept_name), r'insulin')\n-- stack the visit counts underneath\n",
+    solution: "SELECT DISTINCT de.person_id, 'med_insulin' AS item, 1 AS value\nFROM drug_exposure AS de\nJOIN concept AS c ON c.concept_id = de.drug_concept_id\nWHERE REGEXP_CONTAINS(LOWER(c.concept_name), r'insulin')\nUNION ALL\nSELECT person_id, 'visit_days' AS item, COUNT(DISTINCT visit_start_date) AS value\nFROM visit_occurrence\nGROUP BY person_id;",
+    hint: "Both SELECTs must return the same three columns, in the same order. Put UNION ALL between them.",
+    explain: "Stacking everything in one long table (row_id, item, value) is how the baseline query returns labs, medicines and visits in one download. R then spreads it wide with pivot_wider (Module 6)." },
+
+  t1: { title: "Exercise 5.1: the practice version of first_dates_sql", task: "This is your guides’ first-dates query, rewritten for the practice engine. The only change: BigQuery’s <code>ARRAY_AGG(... LIMIT 2)[SAFE_OFFSET(1)]</code> (the second date) becomes a window function. Run it and compare with the guide version on the left.",
+    start: "WITH cs AS (\n  SELECT 'depression' AS concept_set, concept_id FROM concept\n  WHERE (vocabulary_id = 'ICD10CM' AND REGEXP_CONTAINS(concept_code, r'^(F32|F33|F34\\.1)'))\n     OR (vocabulary_id = 'ICD9CM'  AND REGEXP_CONTAINS(concept_code, r'^(296\\.[23]|300\\.4|311)'))\n  UNION ALL\n  SELECT 'diabetes' AS concept_set, concept_id FROM concept\n  WHERE (vocabulary_id = 'ICD10CM' AND REGEXP_CONTAINS(concept_code, r'^(E08|E09|E10|E11|E13)'))\n     OR (vocabulary_id = 'ICD9CM'  AND REGEXP_CONTAINS(concept_code, r'^(249|250)'))),\ndays AS (\n  SELECT DISTINCT co.person_id, cs.concept_set, co.condition_start_date AS d\n  FROM condition_occurrence AS co\n  JOIN cs ON cs.concept_id = co.condition_source_concept_id),\nranked AS (\n  SELECT *, ROW_NUMBER() OVER (PARTITION BY person_id, concept_set ORDER BY d) AS k\n  FROM days)\nSELECT person_id, concept_set,\n       MIN(d) AS first_date,\n       MAX(CASE WHEN k = 2 THEN d END) AS second_date,\n       COUNT(*) AS n_days\nFROM ranked\nGROUP BY person_id, concept_set\nORDER BY person_id, concept_set;" },
+  free: { title: "Free practice", task: "Anything you like. Tables: person, concept, condition_occurrence, drug_exposure, measurement, visit_occurrence, death.", start: "-- write your own query\nSELECT * FROM measurement;" }
+};
+
+/* ---------- quizzes ---------- */
+const QUIZ = {
+  start: [
+    { q: "In which order do your guides use the tools?", o: ["R first, then SQL, then BigQuery", "SQL text is written in R, sent to BigQuery, and the answer comes back into R", "BigQuery runs R code on the server"], a: 1, why: "R builds the SQL text (with glue), bigrquery sends it to BigQuery, and the result is downloaded into R as a table." },
+    { q: "Which of these may leave the All of Us Workbench?", o: ["A table of 30 people with their hypoglycemia dates", "A count of 14 people", "A hazard ratio with its confidence interval"], a: 2, why: "Model estimates and masked counts may leave. Row-level data never; counts of 1–20 only as “<20”." },
+    { q: "Why does run_query() save each result to a parquet file?", o: ["So the query is billed once and every rerun uses identical data", "Because BigQuery can only return parquet", "To hide the data from other users"], a: 0, why: "The saved copy is loaded on reruns, which is cheaper, faster and reproducible." }
+  ],
+  omop: [
+    { q: "A row in condition_occurrence stores…", o: ["The name of the diagnosis as text", "A concept ID; its code and name are in the concept table", "One row per person with all their diagnoses"], a: 1, why: "Records store IDs. Joining to concept translates an ID into a vocabulary, a code (E11.9) and a name." },
+    { q: "Why do your guides join on condition_source_concept_id rather than condition_concept_id?", o: ["The source ID keeps the original ICD-9/ICD-10 code, so ICD code lists can be used directly", "It is faster", "The standard ID is often empty"], a: 0, why: "The source concept is the code the clinician entered (ICD10CM/ICD9CM). The standard concept maps it to SNOMED. Your code lists are ICD patterns, so they match the source concept." },
+    { q: "Where would you find a glucose result of 48 mg/dL?", o: ["observation", "measurement", "condition_occurrence"], a: 1, why: "Labs and vitals are in measurement, identified by LOINC codes (2345-7 for glucose)." },
+    { q: "What tells you whether a hypoglycemia code was recorded in the emergency department?", o: ["The ICD-10 code itself", "The visit it is attached to, via visit_occurrence_id and visit_concept_id", "The person table"], a: 1, why: "Severity “level 4” in your guides comes from the visit type of the record: Emergency Room or Inpatient." }
+  ],
+  "sql-basics": [
+    { q: "In which order does SQL logically run these clauses?", o: ["SELECT → FROM → WHERE", "FROM → WHERE → SELECT → ORDER BY", "ORDER BY → WHERE → FROM"], a: 1, why: "SQL first picks the table (FROM), keeps rows (WHERE), then computes the columns (SELECT) and sorts last (ORDER BY)." },
+    { q: "What does r'^E11' match?", o: ["Any code containing E11", "Codes starting with E11, such as E11.9 and E11.649", "Only the code E11 exactly"], a: 1, why: "^ anchors the pattern at the start. Without ^, a code like H0E11 would also match." },
+    { q: "What is the difference between COUNT(*) and COUNT(DISTINCT person_id)?", o: ["None", "COUNT(*) counts rows (records); COUNT(DISTINCT person_id) counts people", "COUNT(*) ignores NULLs"], a: 1, why: "People have many records. Your flow diagrams count people, so they use distinct IDs." }
+  ],
+  "sql-joins": [
+    { q: "Person 1 has 3 sertraline records. You JOIN person to drug_exposure. How many rows does person 1 get?", o: ["1", "3", "It depends on the WHERE clause only"], a: 1, why: "A join repeats the left row once per match. That’s why your guides check join sizes and use relationship = in R." },
+    { q: "You need everyone in the cohort, with their HbA1c if they have one. Which join?", o: ["INNER JOIN", "LEFT JOIN from the cohort to the lab table", "UNION ALL"], a: 1, why: "LEFT JOIN keeps every cohort member; people without a lab get NULL (NA in R), which is later imputed." },
+    { q: "Why is GROUP BY person_id needed with MIN(condition_start_date)?", o: ["Without it, MIN gives one date for the whole table", "It sorts the output", "It removes NULLs"], a: 0, why: "Aggregates summarise within groups. With GROUP BY person_id you get each person’s own first date." },
+    { q: "WHERE vs HAVING:", o: ["They are the same", "WHERE filters rows before grouping; HAVING filters groups after aggregation", "HAVING is only for dates"], a: 1, why: "Use HAVING for conditions on COUNT, MIN, MAX and other aggregates." }
+  ],
+  "sql-advanced": [
+    { q: "What does a CTE (WITH name AS (...)) do?", o: ["Saves a permanent table in BigQuery", "Names an intermediate result you can use later in the same query", "Speeds up every query"], a: 1, why: "CTEs let you build a query in readable steps: cs, then labs, then lab_last, as in your baseline query." },
+    { q: "Your baseline query keeps medicines with drug_exposure_start_date < t0 AND ≥ DATE_SUB(t0, INTERVAL 365 DAY). Why strictly before t0?", o: ["Because BigQuery can’t compare equal dates", "A covariate must be measured before time zero; a prescription on day 0 could be the treatment itself", "To save cost"], a: 1, why: "Covariates describe people at the decision point. Anything on or after time zero may already be a consequence of the decision." },
+    { q: "ROW_NUMBER() OVER (PARTITION BY person_id ORDER BY date DESC) = 1 picks…", o: ["The oldest record per person", "The newest record per person", "A random record"], a: 1, why: "DESC puts the newest first within each person, and rn = 1 keeps it: the “last value before time zero”." },
+    { q: "UNION ALL requires…", o: ["The same number of columns, in the same order and types", "The same number of rows", "A join key"], a: 0, why: "UNION ALL stacks result sets on top of each other, so their columns must line up." }
+  ],
+  "thesis-sql": [
+    { q: "In R, what does {CDR} inside glue(\"...\") do?", o: ["It is SQL syntax", "R pastes the value of the CDR variable (your dataset name) into the SQL text", "It comments out the line"], a: 1, why: "glue() fills {…} with R values before the SQL is sent, so the same code works for any CDR version." },
+    { q: "Why does the drug query exclude names containing naltrexone from bupropion?", o: ["Naltrexone/bupropion is a weight-loss tablet, not antidepressant treatment", "Naltrexone is a typo", "BigQuery can’t match it"], a: 0, why: "The regex ‘bupropion’ would also match Contrave. DRUG_EXCL removes it." },
+    { q: "What does pop_cte() do in the baseline query?", o: ["Downloads the population", "Writes your R table of row_id, person_id and t0 into the SQL as a small in-query table", "Creates a permanent BigQuery table"], a: 1, why: "UNNEST(ARRAY&lt;STRUCT&lt;…&gt;&gt;[…]) turns a literal list into a table, so BigQuery knows each person’s time zero. That’s also why the guide splits rows into chunks of 10,000." }
+  ],
+  "r-pipeline": [
+    { q: "You restart R and get ‘could not find function \"ns\"’. Best fix?", o: ["Reinstall R", "Rerun Part 0, which loads every package (ns comes from splines)", "Rename the function"], a: 1, why: "Packages must be loaded in every new session. Part 0 does that." },
+    { q: "What does left_join(cov, base_wide, by = \"row_id\") guarantee?", o: ["Every row of cov is kept", "Only rows found in both are kept", "No row is ever duplicated"], a: 0, why: "left_join keeps all left rows. It can still duplicate rows if base_wide had several rows per row_id, which pivot_wider prevents." },
+    { q: "case_when(ev ~ 1L, died ~ 2L, TRUE ~ 0L) returns 2 when…", o: ["ev is TRUE and died is TRUE", "ev is FALSE and died is TRUE", "always for dead people"], a: 1, why: "case_when uses the first condition that is TRUE, in order. An event before death stays status 1." },
+    { q: "Why is safe() wrapped around each analysis?", o: ["To hide results", "So one failing analysis (say, too few events) prints a message instead of stopping the whole run", "To mask counts"], a: 1, why: "safe() is tryCatch(): it returns NULL and a “Skipped:” message on error." }
+  ],
+  "data-mgmt": [
+    { q: "What is the ‘grain’ of the hypo_days table?", o: ["One row per person", "One row per person per day with hypoglycemia (worst level that day)", "One row per record"], a: 1, why: "Records are collapsed to days (worst level), then days to episodes." },
+    { q: "With GAP = 7, days 2019-02-11 and 2019-02-14 are…", o: ["Two episodes", "One episode", "Excluded"], a: 1, why: "They are 3 days apart (≤ 7), so the second day belongs to the first episode." },
+    { q: "Why must an outcome episode START after time zero?", o: ["So follow-up records of an event that began at or before time zero don’t count as a new outcome", "To shorten follow-up", "BigQuery requires it"], a: 0, why: "If depression is coded during a hypoglycemia visit, a follow-up code 3 days later belongs to that same event." },
+    { q: "Your flow shows 14 people dropped at one step. What do you export?", o: ["14", "<20", "Nothing about that step"], a: 1, why: "Counts of 1–20 are shown as “<20”. The step can stay in the flow diagram." }
+  ],
+  "analysis-data": [
+    { q: "A person dies on day 200 with no hypoglycemia before. Their status for the hypoglycemia outcome is…", o: ["0 (censored)", "1 (event)", "2 (competing event: death)"], a: 2, why: "Death prevents hypoglycemia from ever happening, so it’s a competing event, not ordinary censoring." },
+    { q: "Records end on day 400; no event, alive. Status?", o: ["0, censored at day 400", "2", "Excluded"], a: 0, why: "We stopped observing them. Censoring assumes they would have had the same risk as similar people still followed." },
+    { q: "Why does the guide use the Aalen–Johansen estimator for risks instead of 1 − Kaplan–Meier?", o: ["It is faster", "With a competing event (death), 1 − KM overstates risk; Aalen–Johansen accounts for people who died first", "Kaplan–Meier can’t be weighted"], a: 1, why: "1 − KM pretends the dead could still have the event later. Aalen–Johansen does not." },
+    { q: "survSplit(cut = 0.5) turns one row with time 1.4 into…", o: ["Two rows: 0–0.5 and 0.5–1.4", "Two people", "One row with time 0.5"], a: 0, why: "Counting-process format: one person, several intervals. Each interval can have its own covariate values or period label." }
+  ],
+  causal: [
+    { q: "Comparing people who started an antidepressant (ever) with those who didn’t, from the depression date, creates…", o: ["Immortal time bias: starters had to survive event-free until they started", "No bias", "Selection of healthier non-starters only"], a: 0, why: "The days before starting are counted as ‘treated’ time in which an event could not have made someone a starter." },
+    { q: "In clone–censor–weight, a person who starts on day 30 is…", o: ["Removed", "Followed in the ‘start’ clone; the ‘do not start’ clone is censored on day 30", "Followed in both clones to the end"], a: 1, why: "Each clone is censored when the person’s actions stop matching its strategy." },
+    { q: "A treated person has propensity score 0.05. Their IPTW weight is…", o: ["0.05", "20", "0.95"], a: 1, why: "1 / 0.05 = 20: they stand in for many similar people who were not treated. Overlap weighting gives them 1 − 0.05 = 0.95 instead." },
+    { q: "After weighting, which SMDs show good balance?", o: ["All |SMD| below about 0.1", "All SMDs above 0.5", "SMD doesn’t matter if p-values are large"], a: 0, why: "SMD doesn’t depend on sample size, unlike p-values. Below 0.1 is the usual threshold." },
+    { q: "Why can’t the analysis say which drug caused one person’s hypoglycemia?", o: ["It doesn’t need to: it compares risk between groups balanced on diabetes drugs, so the difference is the antidepressant strategy’s effect", "It can, from the codes", "Because codes are masked"], a: 0, why: "Causal effects are contrasts between groups, like in a randomized trial." }
+  ],
+  estimation: [
+    { q: "Severe hypoglycemia: risk 4.0% vs 3.0% at 2 years (made-up numbers). The risk difference is…", o: ["1.0 percentage point", "33%", "1.40"], a: 0, why: "4.0 − 3.0 = 1.0 point: 1 extra person per 100 over 2 years. The ratio 4.0/3.0 = 1.33 is the risk ratio." },
+    { q: "HR 1.40 (1.02–1.92) but the 2-year RD CI is −0.5 to 2.5. How can both be true?", o: ["One is wrong", "The HR uses all follow-up (more events) and robust SEs; the 2-year risk uses less data and a bootstrap, so its CI is wider", "The RD ignores death"], a: 1, why: "Both point the same way; they summarise different things with different precision." },
+    { q: "Rubin’s rules combine imputations by…", o: ["Picking the best imputation", "Averaging the estimates and adding the between-imputation variance to the average within-imputation variance", "Multiplying the p-values"], a: 1, why: "T = W + (1 + 1/m)·B. Disagreement between imputations widens the interval." },
+    { q: "A cataract HR of 0.97 (0.80–1.18) tells you…", o: ["Antidepressants prevent cataract", "No sign that starters simply had more diagnoses recorded (detection bias)", "The main result is wrong"], a: 1, why: "A negative-control outcome should show no effect. If it did, the design would be suspect." },
+    { q: "E-value 2.15 for HR 1.40 means…", o: ["The HR is 2.15", "An unmeasured confounder would need associations of risk ratio ≥ 2.15 with both treatment and outcome to explain the HR away", "The p-value is 2.38"], a: 1, why: "It quantifies how strong residual confounding would have to be." }
+  ],
+  capstone: [
+    { q: "Person 12’s glipizide started 25 days before time zero. Which covariate records that?", o: ["med_sulfonylurea only", "new_gld = 1 (a class first seen in the last 90 days), plus med_sulfonylurea = 1", "prior_hypo"], a: 1, why: "A recently started sulfonylurea is a strong hypoglycemia trigger; new_gld lets the weights and the stable-regimen analysis account for it." },
+    { q: "Person 12 starts mirtazapine on day 16 and has severe hypoglycemia on day 58. In 3a, the event counts for…", o: ["Both clones", "The ‘start’ clone only; the ‘do not start’ clone was censored on day 16", "Neither"], a: 1, why: "The ‘do not start’ clone deviated on day 16, before the event." }
+  ]
+};
+
+/* ---------- annotated code from the guides ---------- */
+const ANNOTS = {
+  first_dates: { lang: "sql", title: "first_dates_sql() (Part 1)", intro: "This query returns, for every person with diabetes, the first and second date each condition was coded and the number of days it was coded. Click a highlighted line.",
+    lines: [
+      ["WITH cs AS ({codes_sql(sets)})", "<b>cs</b> is the code list as a table: one row per (concept_set, concept_id). <code>{codes_sql(sets)}</code> is R: glue pastes in a query that finds every ICD10CM/ICD9CM concept whose code matches each set’s pattern, joined with UNION ALL."],
+      ["SELECT co.person_id, cs.concept_set,", "One output row per person × condition set (for example person 12 × depression)."],
+      ["       MIN(co.condition_start_date)            AS first_date,", "The earliest date the condition was coded: time zero for depression in Aim 3a, and the date that decides covariate (before t0) vs outcome (after t0)."],
+      ["       ARRAY_AGG(DISTINCT co.condition_start_date ORDER BY co.condition_start_date", "BigQuery collects the person’s distinct dates into a sorted array…"],
+      ["                 LIMIT 2)[SAFE_OFFSET(1)]      AS second_date,", "…keeps the first two and takes element 1 (counting from 0): the second date. SAFE_OFFSET returns NULL instead of an error if there is only one date. Aim 2 uses it to require dementia coded on two days."],
+      ["       COUNT(DISTINCT co.condition_start_date) AS n_days", "On how many different days the condition was coded."],
+      ["FROM `{CDR}`.condition_occurrence AS co", "The diagnosis records, in your CDR dataset. Backticks quote the dataset name because it contains dots and dashes."],
+      ["JOIN cs ON cs.concept_id = co.condition_source_concept_id", "Keeps only records whose source concept is in the code list, and attaches the set name."],
+      ["WHERE co.person_id IN ({people_sql})", "Restricts to people with diabetes (DM_PEOPLE): a subquery returning a list of person_ids. Filtering early keeps the query cheap."],
+      ["GROUP BY co.person_id, cs.concept_set", "MIN, ARRAY_AGG and COUNT are computed within each person × set."]
+    ] },
+  drugs: { lang: "sql", title: "drug-days query (Part 2)", intro: "Every day with a record of each antidepressant class (and dementia medicines), for everyone with diabetes.",
+    lines: [
+      ["WITH dc AS ({dc_sql})", "<b>dc</b>: one row per drug concept and class. dc_sql is built in R from DRUG_REGEX: for each class, concepts in the Drug domain whose lower-case name matches the pattern, minus the exclusion (naltrexone for bupropion)."],
+      ["SELECT DISTINCT de.person_id, dc.cls, de.drug_exposure_start_date AS date", "One row per person × class × day. DISTINCT removes repeats when several records fall on the same day (two strengths, a refill)."],
+      ["FROM `{CDR}`.drug_exposure AS de", "Prescriptions and dispensings."],
+      ["JOIN dc ON dc.concept_id = de.drug_concept_id", "Drug records use the standard RxNorm concept (drug_concept_id), so the join is on that column."],
+      ["WHERE de.person_id IN ({DM_PEOPLE})", "Only people with diabetes."]
+    ] },
+  baseline: { lang: "sql", title: "baseline_sql() (Part 3, shortened)", intro: "Labs, medicines and visits at time zero for every row (person × question), in one long table.",
+    lines: [
+      ["WITH {pop_cte(p)},", "R writes your rows into the SQL: pop AS (SELECT * FROM UNNEST(ARRAY&lt;STRUCT&lt;row_id, person_id, t0&gt;&gt;[(1, 1234, DATE '2018-05-02'), …])). Now BigQuery knows each row’s time zero."],
+      ["labs AS (", "Every lab value in the 2 years up to time zero, with unit conversions (mmol/mol HbA1c to %, µmol/L creatinine to mg/dL)."],
+      ["    WHERE m.measurement_date <= p.t0", "Labs on the day of time zero count: they describe the person at the decision."],
+      ["      AND m.measurement_date > DATE_SUB(p.t0, INTERVAL 730 DAY)),", "…and no earlier than 2 years before."],
+      ["lab_last AS (", "Keeps the most recent plausible value per row and lab."],
+      ["    SELECT row_id, lab, ARRAY_AGG(value ORDER BY date DESC LIMIT 1)[OFFSET(0)] AS value", "The newest value: sort descending, keep 1, take element 0. Same result as ROW_NUMBER() … = 1 in Exercise 4.3."],
+      ["    WHERE (lab = 'hba1c' AND value BETWEEN 3 AND 20) OR …", "Drops impossible values (data-entry errors) before choosing the latest."],
+      ["meds AS (", "Glucose-lowering and other medicines in the year before time zero, with the first date in that year."],
+      ["    WHERE d.drug_exposure_start_date < p.t0", "Strictly before time zero: a prescription on day 0 may be the treatment decision itself."],
+      ["    GROUP BY p.row_id, mc.cls),", "One row per row × class, with MIN(date) as first_date, used to flag recently started diabetes drugs."],
+      ["visits AS (… COUNT(DISTINCT v.visit_start_date) AS n …)", "Visit days in the year before: a marker of contact with care (and of how much can be recorded)."],
+      ["SELECT row_id, lab AS item, value FROM lab_last", "Final result is long: row_id, item, value…"],
+      ["UNION ALL SELECT row_id, CONCAT('med_', cls) AS item, 1.0 AS value FROM meds", "…medicines become items such as med_insulin = 1…"],
+      ["UNION ALL SELECT m.row_id, CONCAT('new_', m.cls), 1.0 … WHERE m.first_date >= DATE_SUB(p.t0, INTERVAL 90 DAY)", "…a class whose first record in the year falls in the last 90 days becomes new_&lt;class&gt; = 1 (recently started)…"],
+      ["UNION ALL SELECT row_id, 'visit_days_prior_year' AS item, CAST(n AS FLOAT64) AS value FROM visits", "…and visit days. R spreads this long table wide with pivot_wider."]
+    ] },
+  run_query: { lang: "r", title: "run_query() (Part 0)", intro: "The helper that sends SQL to BigQuery once and then reuses the saved answer.",
+    lines: [
+      ["run_query <- function(name, sql, refresh = FALSE) {", "A function with three inputs: a name for the result, the SQL text, and whether to force a fresh run."],
+      ["  path <- file.path(DATA_DIR, paste0(name, \".parquet\"))", "Where the saved copy lives, for example ~/thesis_data/aim3hypo_first_dates.parquet."],
+      ["  if (file.exists(path) && !refresh) {", "If a saved copy exists (and you didn’t ask to refresh)…"],
+      ["    message(\"Loaded saved copy: \", name)", "…say so…"],
+      ["    return(read_parquet(path))", "…and return it without touching BigQuery. This is why changing RUN (the prefix) forces fresh queries: the names change, so no saved copy is found."],
+      ["  out <- bq_table_download(bq_project_query(BILLING, sql), bigint = \"numeric\")", "Otherwise run the SQL in BigQuery, billed to your project, and download the result. bigint = \"numeric\" keeps person_id as a number R can handle."],
+      ["  write_parquet(out, path)", "Save the result for next time."],
+      ["  writeLines(as.character(sql), file.path(DATA_DIR, paste0(name, \".sql\")))", "Also save the exact SQL that produced it: a record of what you ran."]
+    ] },
+  fu: { lang: "r", title: "fu() and add_fu() (Part 4)", intro: "How each person’s follow-up time and status are computed for one outcome.",
+    lines: [
+      ["fu <- function(t0, event_date, last_record, death_date, cap = CAP) {", "Inputs are whole columns (vectors): the function works for every person at once."],
+      ["  cap_date <- if (is.finite(cap)) add_years(t0, cap) else as.Date(NA)", "The administrative end: 5 years after time zero (or none)."],
+      ["  end  <- pmin(last_record, death_date, cap_date, na.rm = TRUE)", "Follow-up ends at the earliest of last record, death and the cap. pmin works row by row; na.rm ignores a missing death date."],
+      ["  ev   <- !is.na(event_date) & event_date > t0 & event_date <= end", "An event counts only if it exists, is after time zero, and happens before follow-up ends."],
+      ["  exit <- if_else(ev, event_date, end)", "Exit at the event, or at the end of follow-up."],
+      ["  list(time = yrs(exit - t0),", "Time in years since time zero."],
+      ["       status = case_when(ev ~ 1L, !is.na(death_date) & death_date <= exit ~ 2L, TRUE ~ 0L))", "1 = event, 2 = died first (competing event), 0 = censored."],
+      ["add_fu <- function(d, suffix, event_date, cap = CAP) {", "Wrapper that adds time + suffix and status + suffix columns to a data frame, for example time_hypo and status_hypo."]
+    ] }
+};
+
+/* ---------- practice-data logic: the same rules as the thesis guides, written in JavaScript ---------- */
+const DAY = 86400000;
+const d2n = s => Math.round(Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10)) / DAY);
+const n2d = n => new Date(n * DAY).toISOString().slice(0, 10);
+const yrs = days => days / 365.25;
+const tbl = name => DB[name].rows.map(r => Object.fromEntries(DB[name].cols.map((c, i) => [c, r[i]])));
+const CONCEPT = Object.fromEntries(tbl("concept").map(c => [c.concept_id, c]));
+const VISIT = Object.fromEntries(tbl("visit_occurrence").map(v => [v.visit_occurrence_id, v]));
+const VTYPE = { 9201: "IP", 9202: "OP", 9203: "ER" };
+
+const CODES = {
+  diabetes: { icd10: /^(E08|E09|E10|E11|E13)/, icd9: /^(249|250)/ },
+  depression: { icd10: /^(F32|F33|F34\.1)/, icd9: /^(296\.[23]|300\.4|311)/ },
+  dementia: { icd10: /^(F0[123]|G30|G31\.0|G31\.1|G31\.83)/, icd9: /^(290|294\.[12]|331\.[012]|331\.82|797)/ },
+  hypo: { icd10: /^(E16\.[012]|E1[013]\.64)/, icd9: /^251\.[012]/ }
+};
+const AD = { ssri: /sertraline|fluoxetine|citalopram|paroxetine|fluvoxamine/, snri: /venlafaxine|duloxetine|levomilnacipran/,
+  bupropion: /bupropion/, mirtazapine: /mirtazapine/, other_ad: /vilazodone|vortioxetine/ };
+const AD_EXCL = { bupropion: /naltrexone/ };
+const GLD = { insulin: /insulin/, sulfonylurea: /glipizide|glyburide|glibenclamide|glimepiride|gliclazide|tolbutamide|chlorpropamide|tolazamide/,
+  metformin: /metformin/, dpp4i: /sitagliptin|saxagliptin|linagliptin|alogliptin/, sglt2i: /canagliflozin|dapagliflozin|empagliflozin/,
+  glp1ra: /liraglutide|semaglutide|dulaglutide|exenatide|tirzepatide/, tzd: /pioglitazone|rosiglitazone/ };
+const DEM_DRUG = /donepezil|rivastigmine|galantamine|memantine/;
+
+function isCode(set, c) { return c.vocabulary_id === "ICD10CM" ? CODES[set].icd10.test(c.concept_code) : c.vocabulary_id === "ICD9CM" ? CODES[set].icd9.test(c.concept_code) : false; }
+function drugClasses(name) {
+  const n = name.toLowerCase(), out = [];
+  for (const [k, re] of Object.entries(AD)) if (re.test(n) && !(AD_EXCL[k] && AD_EXCL[k].test(n))) out.push(k);
+  for (const [k, re] of Object.entries(GLD)) if (re.test(n)) out.push(k);
+  if (DEM_DRUG.test(n)) out.push("dementia_drug");
+  return out;
+}
+function personData(pid) {
+  const p = tbl("person").find(x => x.person_id === pid);
+  const conds = tbl("condition_occurrence").filter(x => x.person_id === pid).map(x => ({ ...x, c: CONCEPT[x.condition_source_concept_id], date: x.condition_start_date, vt: x.visit_occurrence_id ? VTYPE[VISIT[x.visit_occurrence_id].visit_concept_id] : null }));
+  const drugs = tbl("drug_exposure").filter(x => x.person_id === pid).map(x => ({ ...x, name: CONCEPT[x.drug_concept_id].concept_name, cls: drugClasses(CONCEPT[x.drug_concept_id].concept_name), date: x.drug_exposure_start_date }));
+  const meas = tbl("measurement").filter(x => x.person_id === pid).map(x => ({ ...x, c: CONCEPT[x.measurement_concept_id], date: x.measurement_date, vt: x.visit_occurrence_id ? VTYPE[VISIT[x.visit_occurrence_id].visit_concept_id] : null }));
+  const visits = tbl("visit_occurrence").filter(x => x.person_id === pid).map(x => ({ ...x, date: x.visit_start_date, vt: VTYPE[x.visit_concept_id] }));
+  const death = (tbl("death").find(x => x.person_id === pid) || {}).death_date || null;
+  const all = [...conds, ...drugs, ...meas, ...visits].map(x => d2n(x.date));
+  return { p, conds, drugs, meas, visits, death, first_record: Math.min(...all), last_record: Math.max(...all) };
+}
+const firstOf = (arr) => arr.length ? Math.min(...arr) : null;
+/* hypoglycemia days with levels, as in the Aim 1 guide: 1 glucose 54-69, 2 glucose < 54 (not inpatient), 3 code, 4 code at ED/inpatient */
+function hypoDays(pd) {
+  const m = new Map();
+  const put = (d, lv) => m.set(d, Math.max(m.get(d) || 0, lv));
+  pd.conds.filter(x => isCode("hypo", x.c)).forEach(x => put(x.date, (x.vt === "IP" || x.vt === "ER") ? 4 : 3));
+  pd.meas.filter(x => x.c.concept_code === "2345-7" && x.vt !== "IP").forEach(x => { if (x.value_as_number < 54) put(x.date, 2); else if (x.value_as_number < 70) put(x.date, 1); });
+  return [...m.entries()].map(([date, level]) => ({ date, level })).sort((a, b) => a.date < b.date ? -1 : 1);
+}
+function episodes(days, minLevel, gap) {
+  const d = days.filter(x => x.level >= minLevel);
+  const out = [];
+  d.forEach((x, i) => {
+    const diff = i ? d2n(x.date) - d2n(d[i - 1].date) : null;
+    const isNew = i === 0 || diff > gap;
+    if (isNew) out.push({ start: x.date, end: x.date, level: x.level, days: 1 });
+    else { const e = out[out.length - 1]; e.end = x.date; e.level = Math.max(e.level, x.level); e.days++; }
+  });
+  return out;
+}
+/* Aim 3a eligibility, in the order of the guide (Parts 2-3) */
+function funnel3a() {
+  const people = tbl("person").map(p => p.person_id);
+  const steps = [];
+  let alive = [];
+  people.forEach(pid => {
+    const pd = personData(pid);
+    const dep = pd.conds.filter(x => isCode("depression", x.c)).map(x => d2n(x.date));
+    if (dep.length) alive.push({ pid, pd, t0: Math.min(...dep) });
+  });
+  steps.push({ step: "First depression code (time zero)", keep: alive.map(x => x.pid), why: {} });
+  const rule = (label, test, reason) => {
+    const why = {}; const kept = [];
+    alive.forEach(x => { if (test(x)) kept.push(x); else why[x.pid] = reason(x); });
+    alive = kept; steps.push({ step: label, keep: alive.map(x => x.pid), why });
+  };
+  rule("First coded on or after 2008-01-01", x => x.t0 >= d2n("2008-01-01"), x => `first depression code ${n2d(x.t0)}`);
+  rule("Type 2 diabetes coded by time zero", x => x.pd.conds.some(c => isCode("diabetes", c.c) && d2n(c.date) <= x.t0), () => "no diabetes code on or before time zero");
+  rule("Age ≥ 50 at time zero", x => yrs(x.t0 - d2n(x.pd.p.birth_datetime)) >= 50, x => `age ${yrs(x.t0 - d2n(x.pd.p.birth_datetime)).toFixed(1)}`);
+  rule("≥ 1 year of records before", x => x.pd.first_record <= x.t0 - 365, x => `first record ${n2d(x.pd.first_record)}`);
+  rule("No antidepressant in the year before (new user)", x => !x.pd.drugs.some(d => d.cls.some(c => c in AD) && d2n(d.date) < x.t0 && d2n(d.date) >= x.t0 - 365), x => { const d = x.pd.drugs.find(d => d.cls.some(c => c in AD) && d2n(d.date) < x.t0 && d2n(d.date) >= x.t0 - 365); return `${d.name.split(" ")[0]} on ${d.date}`; });
+  rule("No dementia, MCI or memory-loss code by time zero", x => !x.pd.conds.some(c => isCode("dementia", c.c) && d2n(c.date) <= x.t0), () => "dementia code before time zero");
+  rule("No dementia medication by time zero", x => !x.pd.drugs.some(d => d.cls.includes("dementia_drug") && d2n(d.date) <= x.t0), () => "dementia drug before time zero");
+  rule("Follow-up after time zero", x => Math.min(x.pd.last_record, x.pd.death ? d2n(x.pd.death) : Infinity) > x.t0, () => "no records after time zero");
+  rule("Glucose-lowering drug in the year before (treated diabetes)", x => x.pd.drugs.some(d => d.cls.some(c => c in GLD) && d2n(d.date) < x.t0 && d2n(d.date) >= x.t0 - 365), () => "no diabetes drug in the year before");
+  rule("Active care (≥ 1 visit in the year before)", x => x.pd.visits.some(v => d2n(v.date) < x.t0 && d2n(v.date) >= x.t0 - 365), () => "no visit in the year before");
+  alive.forEach(x => {
+    const ad = x.pd.drugs.filter(d => d.cls.some(c => c in AD) && d2n(d.date) >= x.t0).sort((a, b) => a.date < b.date ? -1 : 1)[0];
+    x.init = ad ? { date: ad.date, cls: ad.cls.find(c => c in AD), day: d2n(ad.date) - x.t0 } : null;
+    x.arm = x.init && x.init.day <= 90 ? "started within 90 days" : "not started";
+  });
+  return { steps, cohort: alive };
+}
+function covariatesAt(pd, t0) {
+  const inYear = d => d2n(d) < t0 && d2n(d) >= t0 - 365;
+  const meds = {};
+  pd.drugs.filter(d => inYear(d.date)).forEach(d => d.cls.forEach(c => { meds[c] = meds[c] ? Math.min(meds[c], d2n(d.date)) : d2n(d.date); }));
+  const gldNew = Object.entries(meds).filter(([c, first]) => c in GLD && first >= t0 - 90).map(([c]) => c);
+  const a1c = pd.meas.filter(m => m.c.concept_code === "4548-4" && d2n(m.date) <= t0 && d2n(m.date) > t0 - 730).sort((a, b) => a.date < b.date ? 1 : -1)[0];
+  const prior = hypoDays(pd).some(h => h.level >= 2 && d2n(h.date) <= t0);
+  return { age: yrs(t0 - d2n(pd.p.birth_datetime)), meds: Object.keys(meds), gldNew, a1c, visits: new Set(pd.visits.filter(v => inYear(v.date)).map(v => v.date)).size, prior };
+}
+
+/* ---------- small helpers ---------- */
+const fmt = (x, d = 2) => (x === null || x === undefined || Number.isNaN(x)) ? "–" : (+x).toFixed(d);
+function grid(cols, rows, cls = () => "") {
+  return `<div class="result"><table class="grid"><thead><tr>${cols.map(c => `<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>${rows.map((r, i) => `<tr class="${cls(r, i)}">${r.map(v => v === null ? `<td class="null">NA</td>` : `<td class="${typeof v === "number" ? "num" : ""}">${esc(v)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+}
+function codeBlock(lang, text, title) { return `<div class="code" data-lang="${lang}"${title ? ` data-title="${esc(title)}"` : ""}><pre>${esc(text)}</pre></div>`; }
+
+/* ---------- widgets ---------- */
+const WIDGETS = {
+  metro(el) {
+    const info = {
+      aou: ["All of Us EHR (OMOP tables)", "Millions of rows in BigQuery: one table per kind of record. You never see the raw tables directly; you ask questions of them with SQL. Module 1."],
+      sql: ["SQL query in BigQuery", "Your guides build SQL text in R (glue) and send it to BigQuery: find people, codes, first dates, drug days, baseline labs. Modules 2–5."],
+      r: ["R: download and cache", "bigrquery brings the answer back as a table; run_query() saves it as a parquet file so it is billed once. Module 6."],
+      dm: ["Data management", "dplyr joins and filters turn records into one row per person per question, with time zero, covariates and episodes. Module 7."],
+      ad: ["Analysis dataset", "Follow-up time and status for each outcome, imputed covariates, clones split into intervals. Module 8."],
+      est: ["Design and estimation", "Weights, clones, Cox models, cumulative incidence, bootstrap, Rubin’s rules. Modules 9–10."],
+      out: ["Masked results", "Only model estimates and counts ≥ 21 (or masked as “<20”) may leave the Workbench. Module 10."]
+    };
+    const go = { aou: "omop", sql: "sql-basics", r: "r-pipeline", dm: "data-mgmt", ad: "analysis-data", est: "causal", out: "estimation" };
+    el.innerHTML = `<div class="metro"><ol>${Object.entries(info).map(([k, v], i) => `<li><button type="button" data-k="${k}"><span class="dot">${i + 1}</span><b>${v[0].split(" (")[0].split(":")[0]}</b></button></li>`).join("")}</ol></div>
+      <div class="metro-detail" aria-live="polite"><b>Click a stop</b><p>Each stop is a stage your data passes through, in the order your guides run them.</p></div>`;
+    $$("button", el).forEach(b => b.addEventListener("click", () => {
+      const [t, d] = info[b.dataset.k];
+      $(".metro-detail", el).innerHTML = `<b>${t}</b><p>${d}</p><p><a href="#${go[b.dataset.k]}">Go to that module →</a></p>`;
+    }));
+  },
+
+  tableExplorer(el) {
+    const names = Object.keys(DB);
+    el.innerHTML = `<div class="row"><label for="tx-sel">Table<select id="tx-sel">${names.map(n => `<option>${n}</option>`).join("")}</select></label>
+      <label for="tx-names"><span>Show concept names next to IDs</span><input type="checkbox" id="tx-names" checked></label></div><div class="tx-out"></div><p class="note tx-n"></p>`;
+    const draw = () => {
+      const t = $("#tx-sel").value, def = DB[t], withNames = $("#tx-names").checked;
+      const idCols = def.cols.filter(c => /_concept_id$/.test(c));
+      const cols = withNames ? def.cols.flatMap(c => idCols.includes(c) ? [c, c.replace("_concept_id", "") + " (name)"] : [c]) : def.cols;
+      const rows = def.rows.map(r => withNames ? def.cols.flatMap((c, i) => idCols.includes(c) ? [r[i], CONCEPT[r[i]] ? CONCEPT[r[i]].concept_name : null] : [r[i]]) : r);
+      $(".tx-out", el).innerHTML = grid(cols, rows);
+      $(".tx-n", el).textContent = `${def.rows.length} rows. In All of Us the same table has millions of rows and more columns; the ones shown are the ones your guides use.`;
+    };
+    $("#tx-sel").addEventListener("change", draw); $("#tx-names").addEventListener("change", draw); draw();
+  },
+
+  joinViz(el) {
+    const L = [[1, "F"], [2, "M"], [3, "F"], [4, "M"]];
+    const R = [[1, "sertraline"], [1, "sertraline"], [2, "bupropion"], [9, "mirtazapine"]];
+    const sql = {
+      inner: "SELECT p.person_id, p.sex, d.drug\nFROM people AS p\nJOIN drugs AS d ON d.person_id = p.person_id",
+      left: "SELECT p.person_id, p.sex, d.drug\nFROM people AS p\nLEFT JOIN drugs AS d ON d.person_id = p.person_id",
+      semi: "SELECT p.*\nFROM people AS p\nWHERE p.person_id IN (SELECT person_id FROM drugs)",
+      anti: "SELECT p.*\nFROM people AS p\nWHERE p.person_id NOT IN (SELECT person_id FROM drugs)"
+    };
+    const rcode = {
+      inner: 'inner_join(people, drugs, by = "person_id", relationship = "one-to-many")',
+      left: 'left_join(people, drugs, by = "person_id")',
+      semi: 'semi_join(people, drugs, by = "person_id")   # keep people WITH a drug row; no columns added, no duplicates',
+      anti: 'anti_join(people, drugs, by = "person_id")   # keep people WITHOUT a drug row'
+    };
+    const say = {
+      inner: "Only people found in both tables. Person 1 appears twice, because she has two drug rows: a join repeats a row once for every match. People 3 and 4 disappear; person 9 has no person row, so the drug row is dropped too.",
+      left: "Every person is kept. People 3 and 4 get NA (NULL) for drug. Person 1 is still repeated. This is how your guides add covariates: left_join keeps everyone in the cohort.",
+      semi: "Keeps people who have at least one drug row, without adding columns and without repeating anyone. Your Aim 3 guide uses semi_join to keep only rows that passed the covariate step.",
+      anti: "Keeps people with no drug row at all: useful for exclusions, such as ‘no antidepressant in the year before’."
+    };
+    el.innerHTML = `<div class="two"><div><b>people</b>${grid(["person_id", "sex"], L)}</div><div><b>drugs</b>${grid(["person_id", "drug"], R)}</div></div>
+      <div class="row" role="radiogroup" aria-label="Join type">${["inner", "left", "semi", "anti"].map(k => `<button type="button" data-k="${k}">${k} join</button>`).join("")}</div>
+      <div class="jv-out"></div>`;
+    const draw = k => {
+      $$(".row button", el).forEach(b => b.classList.toggle("primary", b.dataset.k === k));
+      let rows;
+      if (k === "inner") rows = L.flatMap(l => R.filter(r => r[0] === l[0]).map(r => [l[0], l[1], r[1]]));
+      if (k === "left") rows = L.flatMap(l => { const m = R.filter(r => r[0] === l[0]); return m.length ? m.map(r => [l[0], l[1], r[1]]) : [[l[0], l[1], null]]; });
+      if (k === "semi") rows = L.filter(l => R.some(r => r[0] === l[0]));
+      if (k === "anti") rows = L.filter(l => !R.some(r => r[0] === l[0]));
+      $(".jv-out", el).innerHTML = `<b>Result: ${rows.length} rows</b>${grid(k === "semi" || k === "anti" ? ["person_id", "sex"] : ["person_id", "sex", "drug"], rows)}
+        <p>${say[k]}</p><div class="two">${codeBlock("sql", sql[k], "SQL")}${codeBlock("r", rcode[k], "dplyr")}</div>`;
+      buildCode();
+    };
+    $$(".row button", el).forEach(b => b.addEventListener("click", () => draw(b.dataset.k)));
+    draw("inner");
+  },
+
+  errorDoctor(el) {
+    const E = [
+      ['could not find function "make.method"', "The function lives in a package that isn't loaded in this R session. make.method() and mice() come from the mice package.", "Run library(mice). After any restart of R, rerun all of Part 0 (it loads every package)."],
+      ['could not find function "ns"', "ns() (natural spline) comes from the splines package, which ships with R but isn't loaded automatically.", "Run library(splines); it is in Part 0 of the guides."],
+      ["Error in select(., -a0) : unused argument (-a0)", "Another loaded package (usually MASS) also has a function called select(), and it was loaded after dplyr, so R uses the wrong one.", "Run select <- dplyr::select once after loading packages (already in Part 0), or write dplyr::select(...)."],
+      ["object 'firsts_wide' not found", "An object made in an earlier part doesn’t exist in this session: you started mid-guide, or R restarted.", "Run the chunks that create it (Part 1 here). Objects live in memory only; saved tables come back with load_tbl()."],
+      ["object 'dem_date2' not found (inside mutate())", "The column doesn’t exist in the data frame you are mutating, because the step that adds it wasn’t run or the join didn’t include it.", "Add the column first (in Aim 2 it is joined from firsts2), then rerun the chunk. names(df) lists the columns that exist."],
+      ["Detected an unexpected many-to-many relationship between `x` and `y`", "Both tables have several rows for the same key (for example many hypoglycemia days and many rows per person), so the join multiplies rows.", "If that is intended (as when joining days to people with several time zeros), say so: relationship = \"many-to-many\". If not, fix the keys first (distinct(), or join on row_id)."],
+      ["Error: Access Denied / Query exceeded resource limits (BigQuery)", "The SQL ran in BigQuery and failed there: a wrong table name, a project you can’t bill, or a query that scans too much.", "Check CDR and BILLING in Part 0, test the query with LIMIT 10, and filter people early (WHERE person_id IN (...))."],
+      ["argument is not interpretable as logical (in if)", "An if () got NA or a vector of several values instead of one TRUE/FALSE.", "Use if_else()/case_when() for vectors; check for NA with is.na() before if ()."]
+    ];
+    el.innerHTML = `<label for="ed-sel">Pick the error message you saw<select id="ed-sel">${E.map((e, i) => `<option value="${i}">${esc(e[0])}</option>`).join("")}</select></label><div class="ed-out"></div>`;
+    const draw = () => { const e = E[+$("#ed-sel").value]; $(".ed-out", el).innerHTML = `<dl class="kv"><dt>What it means</dt><dd style="font-family:var(--font-body);font-size:15px">${esc(e[1])}</dd><dt>Fix</dt><dd style="font-family:var(--font-body);font-size:15px">${esc(e[2])}</dd></dl>`; };
+    $("#ed-sel").addEventListener("change", draw); draw();
+  },
+
+  pivotViz(el) {
+    const long = [[1, "hba1c", 8.1], [1, "med_metformin", 1], [1, "visit_days_prior_year", 1], [2, "hba1c", 7.1], [2, "med_insulin", 1], [2, "med_sulfonylurea", 1], [2, "visit_days_prior_year", 1]];
+    const items = ["hba1c", "med_insulin", "med_metformin", "med_sulfonylurea", "visit_days_prior_year"];
+    const wide = [1, 2].map(id => [id, ...items.map(it => { const r = long.find(x => x[0] === id && x[1] === it); return r ? r[2] : null; })]);
+    el.innerHTML = `<div class="two"><div><b>Long: what baseline_sql returns (one row per row_id × item)</b>${grid(["row_id", "item", "value"], long)}</div>
+      <div><b>Wide: one row per row_id, one column per item</b>${grid(["row_id", ...items], wide)}</div></div>
+      ${codeBlock("r", 'base_wide <- base_long %>%\n  pivot_wider(id_cols = row_id, names_from = item, values_from = value, values_fn = max)\n# then: medicines missing = not prescribed -> 0\ncov <- cov %>% mutate(across(all_of(MEDS), \\(x) as.integer(coalesce(x, 0))))', "Part 3 of the guide")}
+      <p>Missing cells (NA) mean “no row came back”. For a medicine that means not prescribed, so the guide turns NA into 0. For a lab, NA means not measured: that stays missing and is imputed in Part 5.</p>`;
+  },
+
+  episodeBuilder(el) {
+    el.innerHTML = `<div class="row"><label for="eb-dates">Hypoglycemia days (one date per line)<textarea id="eb-dates" rows="7" style="font-family:var(--font-mono);width:200px">2019-02-11\n2019-02-14\n2019-03-30\n2019-04-02\n2019-04-15\n2020-01-05</textarea></label>
+      <label for="eb-gap">Gap rule: days apart that still count as the same episode <b id="eb-gv">7</b><input type="range" id="eb-gap" min="0" max="30" value="7"></label></div><div class="eb-out"></div>`;
+    const draw = () => {
+      const gap = +$("#eb-gap").value; $("#eb-gv").textContent = gap;
+      const ds = $("#eb-dates").value.split(/\s+/).filter(s => /^\d{4}-\d{2}-\d{2}$/.test(s)).sort();
+      let ep = 0;
+      const rows = ds.map((d, i) => { const diff = i ? d2n(d) - d2n(ds[i - 1]) : null; const isNew = i === 0 || diff > gap; if (isNew) ep++; return [d, i ? ds[i - 1] : null, diff, isNew ? "TRUE" : "FALSE", ep]; });
+      $(".eb-out", el).innerHTML = `${grid(["date", "lag(date)", "days since previous", "new episode?", "ep = cumsum(new)"], rows, r => r[3] === "TRUE" ? "hl" : "")}
+        <p><b>${ep} episode${ep === 1 ? "" : "s"}</b> from ${ds.length} days. Each highlighted row starts a new episode; the rest join the episode above them.</p>
+        ${codeBlock("r", `make_episodes <- function(days, min_level, gap = ${gap}) {\n  days %>% filter(level >= min_level) %>% arrange(person_id, date) %>%\n    group_by(person_id) %>%\n    mutate(ep = cumsum(is.na(lag(date)) | as.numeric(date - lag(date)) > gap)) %>%\n    group_by(person_id, ep) %>%\n    summarise(date = min(date), level = max(level), .groups = "drop")\n}`, "the same function in your guides")}`;
+      buildCode();
+    };
+    $("#eb-gap").addEventListener("input", draw); $("#eb-dates").addEventListener("input", draw); draw();
+  },
+
+  maskChecker(el) {
+    el.innerHTML = `<label for="mk-in">Counts to check (separate with commas)<input type="text" id="mk-in" value="0, 7, 20, 21, 1234" style="width:260px"></label><div class="mk-out"></div>
+      ${codeBlock("r", 'mask <- function(n) ifelse(n >= 1 & n <= 20, "<20", format(n, big.mark = ","))')}`;
+    const draw = () => {
+      const v = $("#mk-in").value.split(",").map(s => s.trim()).filter(Boolean).map(Number);
+      $(".mk-out", el).innerHTML = grid(["n", "mask(n)", "safe to export?"], v.map(n => [n, (n >= 1 && n <= 20) ? "<20" : n.toLocaleString("en-US"), (n >= 1 && n <= 20) ? "only as <20" : "yes"]));
+    };
+    $("#mk-in").addEventListener("input", draw); draw();
+  },
+
+  timeline(el) {
+    const f = funnel3a();
+    const opts = f.cohort.map(x => x.pid);
+    el.innerHTML = `<label for="tl-p">Person (from the Aim 3a cohort of the practice data)<select id="tl-p">${opts.map(p => `<option value="${p}">Person ${p}</option>`).join("")}</select></label>
+      <div class="tl-wrap"></div><div class="tl-cov"></div>`;
+    const draw = () => {
+      const x = f.cohort.find(c => c.pid === +$("#tl-p").value), pd = x.pd, t0 = x.t0;
+      const W = 900, H = 250, x0 = t0 - 3 * 365, x1 = t0 + 2 * 365, X = n => 40 + (W - 60) * (n - x0) / (x1 - x0);
+      const lanes = { visit: 70, cond: 110, drug: 150, meas: 190 };
+      const inR = d => d2n(d) >= x0 && d2n(d) <= x1;
+      let s = `<svg viewBox="0 0 ${W} ${H}" width="${W}" role="img" aria-label="Timeline of records around time zero">
+        <rect x="${X(t0 - 730)}" y="40" width="${X(t0) - X(t0 - 730)}" height="${H - 70}" fill="var(--why-soft)"/>
+        <rect x="${X(t0 - 365)}" y="40" width="${X(t0) - X(t0 - 365)}" height="${H - 70}" fill="var(--sql-soft)"/>
+        <text x="${X(t0 - 730) + 4}" y="34" font-size="12" class="muted">labs: 2 years</text>
+        <text x="${X(t0 - 365) + 4}" y="34" font-size="12" class="muted">medicines, visits: 1 year</text>
+        <line x1="${X(t0)}" x2="${X(t0)}" y1="6" y2="${H - 24}" stroke="var(--ink)" stroke-width="3"/>
+        <text x="${X(t0) + 6}" y="16" font-size="13" font-weight="700">time zero ${n2d(t0)}</text>
+        <rect x="${X(t0)}" y="40" width="${X(t0 + 90) - X(t0)}" height="${H - 70}" fill="var(--thesis-soft)" opacity=".8"/>
+        <text x="${X(t0) + 6}" y="54" font-size="12" class="muted">90-day grace</text>`;
+      Object.entries(lanes).forEach(([k, y]) => { s += `<text x="0" y="${y + 4}" font-size="12" class="muted">${k}</text><line x1="40" x2="${W - 20}" y1="${y}" y2="${y}" stroke="var(--line)"/>`; });
+      pd.visits.filter(v => inR(v.date)).forEach(v => { s += `<rect x="${X(d2n(v.date)) - 3}" y="${lanes.visit - 8}" width="6" height="16" fill="${v.vt === "OP" ? "var(--muted)" : "var(--bad)"}"><title>${v.vt} visit ${v.date}</title></rect>`; });
+      pd.conds.filter(c => inR(c.date)).forEach(c => { s += `<circle cx="${X(d2n(c.date))}" cy="${lanes.cond}" r="6" fill="${isCode("hypo", c.c) ? "var(--bad)" : isCode("depression", c.c) ? "var(--r)" : "var(--thesis)"}"><title>${c.c.concept_code} ${c.c.concept_name} ${c.date}</title></circle>`; });
+      pd.drugs.filter(d => inR(d.date)).forEach(d => { s += `<rect x="${X(d2n(d.date)) - 6}" y="${lanes.drug - 6}" width="12" height="12" fill="${d.cls.some(c => c in AD) ? "var(--r)" : d.cls.some(c => c in GLD) ? "var(--sql)" : "var(--muted)"}"><title>${d.name} ${d.date}</title></rect>`; });
+      pd.meas.filter(m => inR(m.date)).forEach(m => { const xx = X(d2n(m.date)); s += `<path d="M${xx} ${lanes.meas - 7} L${xx + 7} ${lanes.meas + 6} L${xx - 7} ${lanes.meas + 6} Z" fill="${m.c.concept_code === "2345-7" && m.value_as_number < 70 ? "var(--bad)" : "var(--read)"}"><title>${m.c.concept_name}: ${m.value_as_number} ${m.unit_source_value} ${m.date}</title></path>`; });
+      for (let y = -3; y <= 2; y++) { const xx = X(t0 + Math.round(y * 365.25)); s += `<text x="${xx}" y="${H - 6}" font-size="12" text-anchor="middle" class="muted">${y > 0 ? "+" : ""}${y} y</text>`; }
+      s += "</svg>";
+      $(".tl-wrap", el).innerHTML = s;
+      const cv = covariatesAt(pd, t0);
+      const h = hypoDays(pd), ep = episodes(h, 2, 7).filter(e => d2n(e.start) > t0);
+      $(".tl-cov", el).innerHTML = `<dl class="kv">
+        <dt>age at time zero</dt><dd>${fmt(cv.age, 1)}</dd>
+        <dt>medicines in the year before</dt><dd>${cv.meds.map(m => "med_" + m).join(", ") || "none"}</dd>
+        <dt>new_gld (class first seen in last 90 days)</dt><dd>${cv.gldNew.length ? "1 (" + cv.gldNew.join(", ") + ")" : "0"}</dd>
+        <dt>HbA1c (last in 2 years)</dt><dd>${cv.a1c ? cv.a1c.value_as_number + " on " + cv.a1c.date : "NA (missing → imputed)"}</dd>
+        <dt>visit days in the year before</dt><dd>${cv.visits}</dd>
+        <dt>prior_hypo</dt><dd>${cv.prior ? 1 : 0}</dd>
+        <dt>first antidepressant after time zero</dt><dd>${x.init ? `${x.init.cls} on ${x.init.date} (day ${x.init.day}) → ${x.arm}` : "none → not started"}</dd>
+        <dt>first hypoglycemia episode after time zero</dt><dd>${ep.length ? `${ep[0].start}, day ${d2n(ep[0].start) - t0}, ${ep[0].level === 4 ? "severe (level 4)" : "level " + ep[0].level}` : "none in the records"}</dd></dl>
+        <p class="note">Hover a mark for details. Red marks are hypoglycemia (codes, low glucose) and ED/inpatient visits; blue are depression codes and antidepressants; teal squares are diabetes drugs.</p>`;
+    };
+    $("#tl-p").addEventListener("change", draw); draw();
+  },
+
+  funnel(el) {
+    const f = funnel3a();
+    let prev = f.steps[0].keep;
+    const rows = f.steps.map((s, i) => { const dropped = i ? prev.filter(p => !s.keep.includes(p)) : []; prev = s.keep; return [s.step, s.keep.length, dropped.map(p => `P${p} (${s.why[p]})`).join("; ") || "–"]; });
+    el.innerHTML = `${grid(["step", "people left", "who dropped, and why"], rows)}
+      <p><b>Final Aim 3a cohort:</b> ${f.cohort.map(x => `P${x.pid} (${x.arm}${x.init ? ", " + x.init.cls + " day " + x.init.day : ""})`).join(" · ")}</p>
+      <p class="note">This is the same flow your guide prints with <code>flow %&gt;% mutate(n = mask(n))</code>, done on the practice data. In All of Us you only ever see the counts, masked when 1–20.</p>`;
+  },
+
+  fuCalc(el) {
+    el.innerHTML = `<div class="row">
+      <label for="fu-t0">Time zero<input type="date" id="fu-t0" value="2018-05-02"></label>
+      <label for="fu-ev">Event date (blank = none)<input type="date" id="fu-ev" value="2019-02-11"></label>
+      <label for="fu-last">Last record<input type="date" id="fu-last" value="2020-03-01"></label>
+      <label for="fu-death">Death date (blank = alive)<input type="date" id="fu-death" value=""></label>
+      <label for="fu-cap">Cap (years)<input type="number" id="fu-cap" value="5" min="1" max="20" style="width:80px"></label></div><div class="fu-out"></div>`;
+    const draw = () => {
+      const g = id => $(id).value || null;
+      const t0 = g("#fu-t0"); if (!t0) return;
+      const ev = g("#fu-ev"), last = g("#fu-last"), death = g("#fu-death"), cap = +$("#fu-cap").value;
+      const capD = d2n(t0) + Math.round(365.25 * cap);
+      const end = Math.min(...[last && d2n(last), death && d2n(death), capD].filter(v => v));
+      const isEv = ev && d2n(ev) > d2n(t0) && d2n(ev) <= end;
+      const exit = isEv ? d2n(ev) : end;
+      const status = isEv ? 1 : (death && d2n(death) <= exit ? 2 : 0);
+      const reason = isEv ? "the event happened before follow-up ended" : status === 2 ? "death came first (competing event)" : end === capD ? "the cap was reached" : "records ended (censored)";
+      $(".fu-out", el).innerHTML = `<div class="row" style="gap:28px"><div><div class="note">time (years)</div><div class="big">${fmt(yrs(exit - d2n(t0)), 3)}</div></div>
+        <div><div class="note">status</div><div class="big">${status}</div></div><div><div class="note">exit date</div><div class="big">${n2d(exit)}</div></div></div>
+        <p>Status ${status} = ${["censored (still at risk when we stopped watching)", "event", "death without the event"][status]}, because ${reason}.</p>
+        ${ev && d2n(ev) <= d2n(t0) ? `<p class="err">The event is on or before time zero, so it isn’t an outcome; it would be prior history (a covariate).</p>` : ""}`;
+    };
+    $$("input", el).forEach(i => i.addEventListener("input", draw)); draw();
+  },
+
+  splitViz(el) {
+    el.innerHTML = `<label for="sv-t">Follow-up time for one person (years)<input type="number" id="sv-t" value="1.4" step="0.1" min="0.1" max="5" style="width:90px"></label>
+      <label for="sv-e">Event at the end?<select id="sv-e"><option value="1">yes (ev = 1)</option><option value="0">no (censored)</option></select></label><div class="sv-out"></div>`;
+    const draw = () => {
+      const t = +$("#sv-t").value, e = +$("#sv-e").value, cut = 0.5;
+      const rows = t <= cut ? [[1, 0, t, e, 1]] : [[1, 0, cut, 0, 1], [1, cut, t, e, 2]];
+      $(".sv-out", el).innerHTML = `<div class="two"><div><b>Before: one row</b>${grid(["id", "time", "ev"], [[1, t, e]])}</div><div><b>After survSplit at 0.5 years</b>${grid(["id", "tstart", "time", "ev", "period"], rows)}</div></div>
+        <p>${t <= cut ? "Follow-up ended before 6 months, so the person only contributes to period 1." : "The person contributes 6 months to period 1 (no event there) and the rest to period 2, where the event, if any, is counted."} A Cox model with <code>treat_early</code> and <code>treat_late</code> then gives one hazard ratio per period.</p>`;
+    };
+    $$("input,select", el).forEach(i => i.addEventListener("input", draw)); draw();
+  },
+
+  ccwSim(el) {
+    el.innerHTML = `<div class="row"><label for="cc-s">Day the person starts an antidepressant <b id="cc-sv">45</b><input type="range" id="cc-s" min="0" max="200" value="45"></label>
+      <label for="cc-never"><span>Never starts</span><input type="checkbox" id="cc-never"></label>
+      <label for="cc-e">Day of first hypoglycemia (0 = none) <b id="cc-ev">0</b><input type="range" id="cc-e" min="0" max="365" value="0"></label></div><div class="cc-out"></div>`;
+    const draw = () => {
+      const never = $("#cc-never").checked, s = never ? null : +$("#cc-s").value, e = +$("#cc-e").value || null;
+      $("#cc-sv").textContent = never ? "never" : s; $("#cc-ev").textContent = e || "none";
+      const G = 90, end = 365;
+      const fate = arm => {
+        const initIn = s !== null && s <= G;
+        if (arm === 1) {
+          if (e && e <= G && (s === null || e <= s || initIn)) return { stop: e, how: "event", text: `Event on day ${e}, inside the grace period: it counts for both clones.` };
+          if (initIn) return { stop: e || end, how: e ? "event" : "end", text: `Started on day ${s} (within 90 days): consistent with “start”, followed to the ${e ? "event on day " + e : "end"}. After day 90 the weight is 1 / P(started by day 90).` };
+          return { stop: G, how: "censored", text: `Not started by day 90: deviates from “start”, censored at day 90. Its information is passed to similar people by the weights.` };
+        }
+        if (e && (s === null || e <= s)) return { stop: e, how: "event", text: `Event on day ${e}, before any start: consistent with “do not start”, counted here.` };
+        if (s !== null && s <= G) return { stop: s, how: "censored", text: `Started on day ${s}: deviates from “do not start”, censored on day ${s}. Weight up to then: 1 / P(not yet started).` };
+        return { stop: e || end, how: e ? "event" : "end", text: `Did not start within 90 days: consistent with “do not start”, followed to the ${e ? "event on day " + e : "end"}${s !== null ? ` (the later start on day ${s} doesn’t matter: the strategy only concerns days 0–90)` : ""}.` };
+      };
+      const W = 760, X = d => 150 + (W - 170) * d / end;
+      const bar = (y, f, label) => `<text x="0" y="${y + 17}" font-size="13">${label}</text><rect x="${X(0)}" y="${y}" width="${X(f.stop) - X(0)}" height="24" rx="4" fill="${f.how === "censored" ? "var(--line)" : "var(--sql)"}"/>
+        ${f.how === "censored" ? `<rect x="${X(f.stop)}" y="${y}" width="${X(end) - X(f.stop)}" height="24" rx="4" fill="none" stroke="var(--muted)" stroke-dasharray="4 4"/><text x="${X(f.stop) + 6}" y="${y + 17}" font-size="12" class="muted">censored → reweighted</text>` : ""}
+        ${f.how === "event" ? `<circle cx="${X(f.stop)}" cy="${y + 12}" r="8" fill="var(--bad)"/>` : ""}`;
+      const f1 = fate(1), f0 = fate(0);
+      $(".cc-out", el).innerHTML = `<div class="tl-wrap"><svg viewBox="0 0 ${W} 130" width="${W}" role="img" aria-label="Two clones of one person">
+        <rect x="${X(0)}" y="4" width="${X(G) - X(0)}" height="104" fill="var(--thesis-soft)"/><text x="${X(0) + 4}" y="124" font-size="12" class="muted">grace: days 0–90</text>
+        ${bar(16, f1, "Clone 1: start")}${bar(64, f0, "Clone 2: do not start")}
+        ${s !== null ? `<line x1="${X(s)}" x2="${X(s)}" y1="4" y2="108" stroke="var(--r)" stroke-width="2"/><text x="${X(s) + 4}" y="12" font-size="12" fill="var(--r)">starts day ${s}</text>` : ""}</svg></div>
+        <ul><li><b>Clone 1 (start within 90 days):</b> ${f1.text}</li><li><b>Clone 2 (do not start within 90 days):</b> ${f0.text}</li></ul>`;
+    };
+    $$("input", el).forEach(i => i.addEventListener("input", draw)); draw();
+  },
+
+  weightViz(el) {
+    el.innerHTML = `<label for="wv-ps">Propensity score (probability of being treated, given covariates) <b id="wv-pv">0.20</b><input type="range" id="wv-ps" min="0.02" max="0.98" step="0.01" value="0.2"></label><div class="wv-out"></div>`;
+    const draw = () => {
+      const ps = +$("#wv-ps").value; $("#wv-pv").textContent = ps.toFixed(2);
+      $(".wv-out", el).innerHTML = `${grid(["if this person was…", "IPTW = 1 / P(what they got)", "overlap weight (ATO)"], [["treated (SSRI)", fmt(1 / ps), fmt(1 - ps)], ["untreated / comparator", fmt(1 / (1 - ps)), fmt(ps)]])}
+        <p>${ps < 0.1 || ps > 0.9 ? "<b>Extreme propensity score.</b> IPTW gives this person a huge weight if they got the unlikely treatment, so a few people can dominate the result. Overlap weights shrink such people toward 0 instead." : "Moderate propensity score: both weighting schemes give sensible weights."}
+        IPTW estimates the effect in the whole population; overlap weights estimate it in the people who could plausibly get either treatment (clinical equipoise). Your guides use overlap weights for 3b, which also balance every covariate in the model exactly.</p>`;
+    };
+    $("#wv-ps").addEventListener("input", draw); draw();
+  },
+
+  smdCalc(el) {
+    el.innerHTML = `<div class="row"><label for="sm-m1">Mean, starters<input type="number" id="sm-m1" value="0.42" step="0.01" style="width:90px"></label>
+      <label for="sm-m0">Mean, non-starters<input type="number" id="sm-m0" value="0.30" step="0.01" style="width:90px"></label>
+      <label for="sm-bin"><span>Binary variable (a proportion)</span><input type="checkbox" id="sm-bin" checked></label>
+      <label for="sm-s1">SD, starters<input type="number" id="sm-s1" value="0.49" step="0.01" style="width:90px"></label>
+      <label for="sm-s0">SD, non-starters<input type="number" id="sm-s0" value="0.46" step="0.01" style="width:90px"></label></div><div class="sm-out"></div>`;
+    const draw = () => {
+      const m1 = +$("#sm-m1").value, m0 = +$("#sm-m0").value, bin = $("#sm-bin").checked;
+      const s1 = bin ? Math.sqrt(m1 * (1 - m1)) : +$("#sm-s1").value, s0 = bin ? Math.sqrt(m0 * (1 - m0)) : +$("#sm-s0").value;
+      const smd = (m1 - m0) / Math.sqrt((s1 * s1 + s0 * s0) / 2);
+      $(".sm-out", el).innerHTML = `<p>SMD = (${m1} − ${m0}) / √((${fmt(s1)}² + ${fmt(s0)}²) / 2) = <b>${fmt(smd, 3)}</b> → ${Math.abs(smd) < 0.1 ? "balanced (|SMD| < 0.1)" : "imbalanced: the weights must fix this"}</p>`;
+    };
+    $$("input", el).forEach(i => i.addEventListener("input", draw)); draw();
+  },
+
+  rubinCalc(el) {
+    el.innerHTML = `<p class="note">log hazard ratios and their standard errors from 5 imputed datasets (edit them):</p>
+      <div class="row">${[0.12, 0.09, 0.15, 0.11, 0.08].map((b, i) => `<label for="rb-b${i}">b${i + 1}<input type="number" id="rb-b${i}" value="${b}" step="0.01" style="width:80px"></label>`).join("")}</div>
+      <div class="row">${[0.08, 0.08, 0.09, 0.08, 0.08].map((s, i) => `<label for="rb-s${i}">SE${i + 1}<input type="number" id="rb-s${i}" value="${s}" step="0.01" style="width:80px"></label>`).join("")}</div><div class="rb-out"></div>`;
+    const draw = () => {
+      const b = [0, 1, 2, 3, 4].map(i => +$("#rb-b" + i).value), s = [0, 1, 2, 3, 4].map(i => +$("#rb-s" + i).value), m = 5;
+      const qbar = b.reduce((a, x) => a + x, 0) / m, W = s.reduce((a, x) => a + x * x, 0) / m;
+      const B = b.reduce((a, x) => a + (x - qbar) ** 2, 0) / (m - 1), T = W + (1 + 1 / m) * B, se = Math.sqrt(T);
+      $(".rb-out", el).innerHTML = `<dl class="kv"><dt>pooled estimate q̄ (mean of b)</dt><dd>${fmt(qbar, 4)}</dd><dt>within-imputation variance W (mean of SE²)</dt><dd>${fmt(W, 5)}</dd>
+        <dt>between-imputation variance B (variance of b)</dt><dd>${fmt(B, 5)}</dd><dt>total variance T = W + (1 + 1/m)·B</dt><dd>${fmt(T, 5)}</dd>
+        <dt>pooled HR (95% CI)</dt><dd>${fmt(Math.exp(qbar))} (${fmt(Math.exp(qbar - 1.96 * se))}–${fmt(Math.exp(qbar + 1.96 * se))})</dd></dl>
+        <p class="note">B is the extra uncertainty because the missing values had to be guessed. If the imputations disagree a lot, B grows and the interval widens. This is exactly what <code>pool_fits()</code> and <code>pool_scalar()</code> do in your guides.</p>`;
+    };
+    $$("input", el).forEach(i => i.addEventListener("input", draw)); draw();
+  },
+
+  evalue(el) {
+    el.innerHTML = `<div class="row"><label for="ev-hr">HR<input type="number" id="ev-hr" value="1.40" step="0.01" style="width:90px"></label>
+      <label for="ev-lo">lower 95% limit<input type="number" id="ev-lo" value="1.02" step="0.01" style="width:90px"></label>
+      <label for="ev-hi">upper 95% limit<input type="number" id="ev-hi" value="1.92" step="0.01" style="width:90px"></label></div><div class="ev-out"></div>`;
+    const draw = () => {
+      const hr = +$("#ev-hr").value, lo = +$("#ev-lo").value, hi = +$("#ev-hi").value;
+      const e = r => { r = r < 1 ? 1 / r : r; return r + Math.sqrt(r * (r - 1)); };
+      const near = hr >= 1 ? lo : hi, crosses = (hr >= 1 && near <= 1) || (hr < 1 && near >= 1);
+      $(".ev-out", el).innerHTML = `<p>E-value for the estimate: <b>${fmt(e(hr))}</b>; for the confidence limit nearer 1: <b>${crosses ? "1 (the interval already includes no effect)" : fmt(e(near))}</b>.</p>
+        <p>Read it as: an unmeasured confounder (say, depression severity) would need to be associated with both starting treatment and hypoglycemia by a risk ratio of at least ${fmt(e(hr))} each, beyond the measured covariates, to fully explain away the HR of ${hr}.</p>`;
+    };
+    $$("input", el).forEach(i => i.addEventListener("input", draw)); draw();
+  },
+
+  ciPlot(el) {
+    const W = 640, H = 300, X = t => 60 + (W - 90) * t / 5, Y = r => H - 40 - (H - 70) * r / 0.25;
+    const curve = (h, delay) => { let pts = [], r = 0; for (let t = 0; t <= 5.001; t += 0.05) { if (t > delay) r = 1 - Math.exp(-h * (t - delay) * (1 + 0.1 * t)); pts.push([t, r]); } return pts; };
+    const a = curve(0.055, 0), b = curve(0.045, 0);
+    const path = pts => "M" + pts.map(([t, r]) => `${X(t).toFixed(1)} ${Y(r).toFixed(1)}`).join(" L");
+    const r2a = a.find(p => p[0] >= 2)[1], r2b = b.find(p => p[0] >= 2)[1];
+    el.innerHTML = `<div class="tl-wrap"><svg viewBox="0 0 ${W} ${H}" width="${W}" role="img" aria-label="Cumulative incidence curves for two strategies">
+      ${[0, 0.05, 0.1, 0.15, 0.2, 0.25].map(r => `<line x1="60" x2="${W - 30}" y1="${Y(r)}" y2="${Y(r)}" stroke="var(--line)"/><text x="52" y="${Y(r) + 4}" font-size="12" text-anchor="end" class="muted">${Math.round(r * 100)}%</text>`).join("")}
+      ${[0, 1, 2, 3, 4, 5].map(t => `<text x="${X(t)}" y="${H - 18}" font-size="12" text-anchor="middle" class="muted">${t}</text>`).join("")}
+      <text x="${X(2.5)}" y="${H - 2}" font-size="12" text-anchor="middle" class="muted">years since time zero</text>
+      <line x1="${X(2)}" x2="${X(2)}" y1="${Y(0.25)}" y2="${Y(0)}" stroke="var(--thesis)" stroke-dasharray="5 4"/>
+      <path d="${path(a)}" fill="none" stroke="var(--bad)" stroke-width="3"/><path d="${path(b)}" fill="none" stroke="var(--sql)" stroke-width="3"/>
+      <circle cx="${X(2)}" cy="${Y(r2a)}" r="5" fill="var(--bad)"/><circle cx="${X(2)}" cy="${Y(r2b)}" r="5" fill="var(--sql)"/>
+      <text x="${X(2) + 8}" y="${Y(r2a) - 6}" font-size="13" fill="var(--bad)">start: ${fmt(100 * r2a, 1)}%</text>
+      <text x="${X(2) + 8}" y="${Y(r2b) + 16}" font-size="13" fill="var(--sql)">do not start: ${fmt(100 * r2b, 1)}%</text></svg></div>
+      <p>At 2 years: risk difference = ${fmt(100 * r2a, 1)} − ${fmt(100 * r2b, 1)} = <b>${fmt(100 * (r2a - r2b), 1)} percentage points</b>; risk ratio = <b>${fmt(r2a / r2b)}</b>. The HR summarises the gap between the curves over all of follow-up, as a ratio of instantaneous rates. (Made-up curves, for reading practice.)</p>`;
+  },
+
+  outputReader(el) {
+    const cols = [
+      ["analysis", "Which outcome. Clinically significant (primary) first, then severe (secondary)."],
+      ["years", "The time point for the risks: 2 years."],
+      ["risk_start_pct", "Estimated % with hypoglycemia by 2 years if everyone had started an antidepressant within 90 days (weighted Aalen–Johansen, averaged over imputations)."],
+      ["risk_nostart_pct", "The same if nobody had started within 90 days."],
+      ["rd_pct, rd_lower, rd_upper", "Risk difference in percentage points, start minus not start, with its 95% CI from the bootstrap and Rubin’s rules. A CI that includes 0 means no clear difference."],
+      ["rr, rr_lower, rr_upper", "Risk ratio at 2 years with its CI. A CI that includes 1 means no clear difference."],
+      ["hr, hr_lower, hr_upper, p", "Hazard ratio from the weighted Cox model over the whole follow-up, with a robust CI (clustered by person, because each person has two clones) and p-value."]
+    ];
+    const vals = [["Clinically significant hypoglycemia", 2, 10.3, 12.4, -2.1, -4.71, 0.52, 0.83, 0.66, 1.05, 0.94, 0.79, 1.12, 0.50], ["Severe hypoglycemia", 2, 2.92, 3.99, -1.07, -2.54, 0.41, 0.73, 0.48, 1.11, 0.86, 0.65, 1.15, 0.32]];
+    const heads = ["analysis", "years", "risk_start_pct", "risk_nostart_pct", "rd_pct", "rd_lower", "rd_upper", "rr", "rr_lower", "rr_upper", "hr", "hr_lower", "hr_upper", "p"];
+    el.innerHTML = `<p class="note">The output of <code>res_q1</code> from the simulated test run (true effect: none). Click a column name.</p>
+      <div class="result"><table class="grid"><thead><tr>${heads.map(h => `<th><button type="button" class="ghost" data-h="${h}" style="padding:2px 4px;font:inherit">${h}</button></th>`).join("")}</tr></thead>
+      <tbody>${vals.map(r => `<tr>${r.map(v => `<td class="${typeof v === "number" ? "num" : ""}">${v}</td>`).join("")}</tr>`).join("")}</tbody></table></div>
+      <div class="box read or-out"><b>How to read it</b><p>Click a column name above.</p></div>`;
+    $$("button[data-h]", el).forEach(b => b.addEventListener("click", () => {
+      const c = cols.find(c => c[0].split(", ").includes(b.dataset.h));
+      $(".or-out", el).innerHTML = `<b>${esc(c[0])}</b><p>${c[1]}</p>`;
+    }));
+  },
+
+  capstone(el) {
+    const f = funnel3a();
+    const x = f.cohort.find(c => c.pid === 12), pd = x.pd, t0 = x.t0, cv = covariatesAt(pd, t0);
+    const h = hypoDays(pd), ep = episodes(h, 2, 7);
+    const after = ep.filter(e => d2n(e.start) > t0);
+    const steps = [
+      ["Raw records (Module 1)", `Person 12 has ${pd.visits.length} visits, ${pd.conds.length} diagnosis records, ${pd.drugs.length} drug records and ${pd.meas.length} lab results in the OMOP tables. His first depression code is F32.9 on ${n2d(t0)}.`,
+        "SELECT * FROM condition_occurrence WHERE person_id = 12 ORDER BY condition_start_date"],
+      ["First dates (Module 5: first_dates_sql)", `The first-dates query returns one row per person × condition set: diabetes first coded 2012-06-06; depression first coded ${n2d(t0)}. For Aim 3a, that depression date is time zero.`,
+        "-- part of first_dates_sql, simplified\nSELECT co.person_id, MIN(co.condition_start_date) AS first_date\nFROM condition_occurrence AS co\nJOIN concept AS c ON c.concept_id = co.condition_source_concept_id\nWHERE REGEXP_CONTAINS(c.concept_code, '^(F32|F33|F34.1)')\nGROUP BY co.person_id"],
+      ["Eligibility (Module 7: the flow)", `Age at time zero ${fmt(cv.age, 1)} (≥ 50 ✓), diabetes coded before (✓), records since 2011 (✓), no antidepressant in the year before (✓), no dementia (✓), insulin and glipizide in the year before (treated ✓), ${cv.visits} visit days in the year before (active care ✓). He enters the 3a cohort.`, null],
+      ["Covariates at time zero (Module 4: the baseline query)", `Medicines in the year before: ${cv.meds.map(m => "med_" + m).join(", ")}. HbA1c ${cv.a1c ? cv.a1c.value_as_number + " (" + cv.a1c.date + ")" : "missing"}. Glipizide was first seen on 2017-03-10, 25 days before time zero, so new_gld = ${cv.gldNew.length ? 1 : 0}: a recently started sulfonylurea, a strong hypoglycemia trigger the weights must account for.`, null],
+      ["Treatment start (Module 7)", `His first antidepressant after time zero is ${x.init.cls} on ${x.init.date}, day ${x.init.day}: within the 90-day grace period, so in the data his arm is “${x.arm}”.`, null],
+      ["Hypoglycemia episodes (Module 7)", `Hypoglycemia days: ${h.map(d => d.date + " (level " + d.level + ")").join(", ")}. Counting level 2 or worse, the 7-day rule gives ${ep.length} episodes (the level 1 day, glucose 64, doesn't count). The first one starting after time zero is ${after[0].start}, day ${d2n(after[0].start) - t0}, level ${after[0].level}: severe, because the code sits on an emergency visit together with a glucose of 45 mg/dL.`, null],
+      ["Follow-up (Module 8)", `Primary outcome: time = ${fmt(yrs(d2n(after[0].start) - t0), 3)} years, status = 1. Severe outcome: the same day, status = 1. Cataract: no code, so he is followed to his last record (${n2d(pd.last_record)}) and censored: status 0.`, null],
+      ["Clones (Module 9)", `Clone 1 (start within 90 days) is consistent: he started on day ${x.init.day}, so it is followed to the hypoglycemia on day ${d2n(after[0].start) - t0}, which counts as an event for “start”. Clone 2 (do not start) is censored on day ${x.init.day}, the day he started; it contributes days 0–${x.init.day} with a weight of 1 / P(not yet started), and no event.`, null],
+      ["Into the estimate (Module 10)", `His event adds to the “start” curve at about 2 months. The Cox model compares event rates between the two weighted clone groups across all people; in 3b he would be a mirtazapine starter (time zero ${x.init.date}) with the same episode on day ${d2n(after[0].start) - d2n(x.init.date)}. In All of Us, nobody sees his row: only pooled estimates and masked counts leave the Workbench.`, null]
+    ];
+    let i = 0;
+    el.innerHTML = `<div class="row"><button type="button" class="cs-prev">← Back</button><span class="cs-n note"></span><button type="button" class="primary cs-next">Next step →</button></div><div class="cs-body card"></div>`;
+    const draw = () => {
+      const [t, d, q] = steps[i];
+      $(".cs-n", el).textContent = `Step ${i + 1} of ${steps.length}`;
+      $(".cs-body", el).innerHTML = `<h4>${t}</h4><p>${d}</p>${q ? codeBlock("sql", q, "you can run this in any SQL exercise box") : ""}`;
+      $(".cs-prev", el).disabled = i === 0; $(".cs-next", el).disabled = i === steps.length - 1;
+      buildCode();
+    };
+    $(".cs-prev", el).addEventListener("click", () => { i = Math.max(0, i - 1); draw(); });
+    $(".cs-next", el).addEventListener("click", () => { i = Math.min(steps.length - 1, i + 1); draw(); });
+    draw();
+  }
+};
+
+/* ---------- course structure ---------- */
+const MODULES = [
+  { id: "start", n: 0, title: "The map of your thesis", kind: "data", tag: "Start" },
+  { id: "omop", n: 1, title: "The data: All of Us and OMOP", kind: "data", tag: "Data" },
+  { id: "sql-basics", n: 2, title: "SQL 1: asking a table questions", kind: "sql", tag: "SQL" },
+  { id: "sql-joins", n: 3, title: "SQL 2: joining and summarising", kind: "sql", tag: "SQL" },
+  { id: "sql-advanced", n: 4, title: "SQL 3: time windows and latest values", kind: "sql", tag: "SQL" },
+  { id: "thesis-sql", n: 5, title: "Reading the SQL in your guides", kind: "sql", tag: "SQL" },
+  { id: "r-pipeline", n: 6, title: "R: from query to tibble", kind: "r", tag: "R" },
+  { id: "data-mgmt", n: 7, title: "Data management: grain, keys, episodes", kind: "data", tag: "Data" },
+  { id: "analysis-data", n: 8, title: "Follow-up, censoring and intervals", kind: "r", tag: "R" },
+  { id: "causal", n: 9, title: "Causal design: target trials, weights, clones", kind: "stats", tag: "Stats" },
+  { id: "estimation", n: 10, title: "Estimation and reading output", kind: "stats", tag: "Stats" },
+  { id: "capstone", n: 11, title: "Capstone: one person through Aim 3", kind: "data", tag: "Capstone" }
+];
+const STORE_KEY = "aou-thesis-course-v1";
+let progress = {};
+try { progress = JSON.parse(localStorage.getItem(STORE_KEY) || "{}") || {}; } catch (e) { progress = {}; }
+function saveProgress() { try { localStorage.setItem(STORE_KEY, JSON.stringify(progress)); } catch (e) { /* storage unavailable */ } }
+
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
+const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+/* ---------- navigation ---------- */
+function buildNav() {
+  const ol = $("#route");
+  ol.innerHTML = MODULES.map(m => `<li><a href="#${m.id}" data-id="${m.id}" data-kind="${m.kind}">
+    <span class="stop">${m.n}</span><span class="label">${esc(m.title)}<small>${m.tag}</small></span></a></li>`).join("");
+  updateProgress();
+}
+function updateProgress() {
+  const done = MODULES.filter(m => progress[m.id]).length;
+  $("#prog-text").textContent = `${done} of ${MODULES.length} modules done`;
+  $("#prog-bar").style.width = `${Math.round(100 * done / MODULES.length)}%`;
+  $$("#route a").forEach(a => a.classList.toggle("done", !!progress[a.dataset.id]));
+  $$(".mark-done").forEach(b => {
+    const id = b.closest(".lesson").dataset.id;
+    b.textContent = progress[id] ? "Done ✓ (click to undo)" : "Mark this module as done";
+  });
+}
+function show(id) {
+  if (!MODULES.some(m => m.id === id)) id = "start";
+  $$(".lesson").forEach(s => s.classList.toggle("show", s.dataset.id === id));
+  $$("#route a").forEach(a => a.classList.toggle("active", a.dataset.id === id));
+  window.scrollTo(0, 0);
+}
+function addPagers() {
+  $$(".lesson").forEach(sec => {
+    const i = MODULES.findIndex(m => m.id === sec.dataset.id);
+    const prev = MODULES[i - 1], next = MODULES[i + 1];
+    const div = document.createElement("div");
+    div.className = "pager";
+    div.innerHTML = `${prev ? `<a class="btn" href="#${prev.id}">← ${prev.n}. ${esc(prev.title)}</a>` : "<span></span>"}
+      <button class="mark-done" type="button">Mark this module as done</button>
+      ${next ? `<a class="btn" href="#${next.id}">${next.n}. ${esc(next.title)} →</a>` : "<span></span>"}`;
+    sec.appendChild(div);
+    $(".mark-done", div).addEventListener("click", () => { progress[sec.dataset.id] = !progress[sec.dataset.id]; saveProgress(); updateProgress(); });
+  });
+}
+
+/* ---------- code blocks ---------- */
+function highlight(line, lang) {
+  let s = esc(line);
+  const cm = lang === "r" ? s.indexOf("#") : s.indexOf("--");
+  let tail = "";
+  if (cm >= 0 && !/^[^']*'[^']*$/.test(s.slice(0, cm))) { tail = `<span class="cm">${s.slice(cm)}</span>`; s = s.slice(0, cm); }
+  s = s.replace(/(&quot;[^&]*?&quot;|'[^']*')/g, '<span class="str">$1</span>');
+  if (lang === "sql") s = s.replace(/\b(SELECT|FROM|WHERE|JOIN|LEFT|INNER|ON|AND|OR|NOT|IN|GROUP BY|ORDER BY|HAVING|AS|WITH|UNION ALL|DISTINCT|COUNT|MIN|MAX|CASE|WHEN|THEN|ELSE|END|LIMIT|IS|NULL|BETWEEN|LIKE|OVER|PARTITION BY|DESC|ASC)\b/g, '<span class="kw">$1</span>');
+  return s + tail;
+}
+function buildCode() {
+  $$(".code[data-lang]").forEach(div => {
+    if (div.dataset.built) return;
+    const lang = div.dataset.lang;
+    const pre = $("pre", div);
+    const raw = pre.textContent.replace(/^\n/, "").replace(/\s+$/, "");
+    pre.innerHTML = raw.split("\n").map(l => highlight(l, lang)).join("\n");
+    const head = document.createElement("div");
+    head.className = "code-head";
+    head.innerHTML = `<span class="lang ${lang}">${lang === "sql" ? "SQL" : lang === "r" ? "R" : "Output"}${div.dataset.title ? " · " + esc(div.dataset.title) : ""}</span><button class="copy" type="button">Copy</button>`;
+    div.insertBefore(head, pre);
+    $(".copy", head).addEventListener("click", async e => {
+      try { await navigator.clipboard.writeText(raw); e.target.textContent = "Copied"; }
+      catch (err) { e.target.textContent = "Select and copy"; }
+      setTimeout(() => (e.target.textContent = "Copy"), 1500);
+    });
+    div.dataset.built = "1";
+  });
+}
+function buildAnnot() {
+  $$(".annot[data-annot]").forEach(div => {
+    const a = ANNOTS[div.dataset.annot];
+    if (!a) return;
+    div.innerHTML = `<div class="code"><div class="code-head"><span class="lang ${a.lang}">${a.lang === "sql" ? "SQL" : "R"} · ${esc(a.title)}</span><span>click a highlighted line</span></div>
+      <pre>${a.lines.map((l, i) => `<span class="ln${l[1] ? " has" : ""}" data-i="${i}">${highlight(l[0], a.lang) || " "}</span>`).join("")}</pre></div>
+      <div class="explain"><b>What this line does</b><p class="hint">${esc(a.intro || "Click a highlighted line on the left to see what it does.")}</p></div>`;
+    $$(".ln.has", div).forEach(span => span.addEventListener("click", () => {
+      $$(".ln", div).forEach(x => x.classList.remove("on"));
+      span.classList.add("on");
+      const l = a.lines[+span.dataset.i];
+      $(".explain", div).innerHTML = `<b>${esc(l[0].trim().slice(0, 70))}</b><p>${l[1]}</p>`;
+    }));
+  });
+}
+
+/* ---------- quizzes ---------- */
+function buildQuizzes() {
+  $$(".quiz[data-quiz]").forEach(div => {
+    const qs = QUIZ[div.dataset.quiz] || [];
+    const answered = new Set();
+    div.innerHTML = `<p class="quiz-score" aria-live="polite">0 of ${qs.length} answered correctly</p>` + qs.map((q, i) => `
+      <div class="q" data-i="${i}"><p class="stem">${i + 1}. ${q.q}</p>
+      <div class="opts">${q.o.map((o, j) => `<button type="button" data-j="${j}">${o}</button>`).join("")}</div>
+      <p class="fb" aria-live="polite"></p></div>`).join("");
+    $$(".q", div).forEach(qd => {
+      const q = qs[+qd.dataset.i];
+      $$(".opts button", qd).forEach(b => b.addEventListener("click", () => {
+        const j = +b.dataset.j, ok = j === q.a;
+        $$(".opts button", qd).forEach(x => x.classList.remove("right", "wrong"));
+        b.classList.add(ok ? "right" : "wrong");
+        const fb = $(".fb", qd);
+        fb.innerHTML = ok ? `<b class="r">Right.</b> ${q.why}` : `<b class="w">Not quite.</b> ${q.hint || "Try another option."}`;
+        fb.classList.add("show");
+        if (ok) answered.add(qd.dataset.i);
+        $(".quiz-score", div).textContent = `${answered.size} of ${qs.length} answered correctly`;
+        if (answered.size === qs.length) {
+          const id = div.closest(".lesson").dataset.id;
+          if (!progress[id]) { progress[id] = true; saveProgress(); updateProgress(); }
+          $(".quiz-score", div).textContent = `All ${qs.length} correct: module marked as done.`;
+        }
+      }));
+    });
+  });
+}
+
+/* ---------- SQL engine (SQLite in the browser) ---------- */
+let SQLDB = null;
+function bq2sqlite(sql) {
+  return sql
+    .replace(/`[^`]*`\s*\.\s*/g, "")                 /* `{CDR}`.concept  ->  concept */
+    .replace(/\{CDR\}\s*\./g, "")
+    .replace(/`/g, "")
+    .replace(/\br'/g, "'")                           /* r'^E11' -> '^E11' */
+    .replace(/DATE\s+'(\d{4}-\d{2}-\d{2})'/gi, "'$1'")
+    .replace(/DATE_SUB\(\s*([^,()]+(?:\([^()]*\))?)\s*,\s*INTERVAL\s+(\d+)\s+DAY\s*\)/gi, "date($1, '-$2 days')")
+    .replace(/DATE_ADD\(\s*([^,()]+(?:\([^()]*\))?)\s*,\s*INTERVAL\s+(\d+)\s+DAY\s*\)/gi, "date($1, '+$2 days')")
+    .replace(/DATE_DIFF\(\s*([^,()]+)\s*,\s*([^,()]+)\s*,\s*DAY\s*\)/gi, "CAST(julianday($1) - julianday($2) AS INTEGER)");
+}
+function runSQL(sql) {
+  if (!SQLDB) throw new Error("The SQL engine is still loading, or could not load. See the note at the bottom of the left panel.");
+  const res = SQLDB.exec(bq2sqlite(sql));
+  if (!res.length) return { columns: [], values: [] };
+  return res[res.length - 1];
+}
+function renderGrid(res, opts = {}) {
+  if (!res.columns.length) return `<p class="note" style="padding:10px">The query ran but returned no rows.</p>`;
+  const max = opts.max || 200;
+  const rows = res.values.slice(0, max);
+  return `<table class="grid"><thead><tr>${res.columns.map(c => `<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(v =>
+    v === null ? `<td class="null">NULL</td>` : `<td class="${typeof v === "number" ? "num" : ""}">${esc(typeof v === "number" && !Number.isInteger(v) ? +v.toFixed(3) : v)}</td>`).join("")}</tr>`).join("")}</tbody></table>
+    ${res.values.length > max ? `<p class="note" style="padding:6px 10px">Showing ${max} of ${res.values.length} rows.</p>` : ""}`;
+}
+function normRows(res, ordered) {
+  const rows = res.values.map(r => JSON.stringify(r.map(v => typeof v === "number" ? Math.round(v * 1000) / 1000 : v)));
+  return ordered ? rows : rows.slice().sort();
+}
+function sameResult(a, b, ordered) {
+  if (a.columns.length !== b.columns.length || a.values.length !== b.values.length) return false;
+  const x = normRows(a, ordered), y = normRows(b, ordered);
+  return x.every((v, i) => v === y[i]);
+}
+function buildSqlBoxes() {
+  $$(".sqlbox[data-ex]").forEach(div => {
+    const ex = EXERCISES[div.dataset.ex];
+    if (!ex) return;
+    const id = "ed-" + div.dataset.ex;
+    div.classList.add("card");
+    div.innerHTML = `
+      <h4><span class="tag sql">SQL</span> ${ex.title ? esc(ex.title) : "Try it"}</h4>
+      ${ex.task ? `<p class="task">${ex.task}</p>` : ""}
+      <label for="${id}" class="note">Write SQL below. Press Run, or Ctrl+Enter (Cmd+Enter on a Mac).</label>
+      <textarea class="sqled" id="${id}" spellcheck="false">${esc(ex.start || "")}</textarea>
+      <div class="row">
+        <button class="primary run" type="button">Run</button>
+        ${ex.solution ? `<button class="hint-b" type="button">Hint</button><button class="sol-b" type="button">Show solution</button>` : ""}
+        <button class="reset" type="button">Reset</button>
+        ${ex.solution ? `<span class="status-pill idle" aria-live="polite">Not checked yet</span>` : ""}
+      </div>
+      ${ex.hint ? `<p class="note hint-t" hidden>Hint: ${ex.hint}</p>` : ""}
+      ${ex.solution ? `<div class="solution"><div class="code" data-lang="sql"><pre>${esc(ex.solution)}</pre></div>${ex.explain ? `<p class="note" style="margin-top:8px">${ex.explain}</p>` : ""}</div>` : ""}
+      <div class="err" aria-live="polite"></div>
+      <div class="result"></div>`;
+    const ta = $("textarea", div);
+    const run = () => {
+      $(".err", div).textContent = ""; $(".result", div).innerHTML = "";
+      try {
+        const res = runSQL(ta.value);
+        $(".result", div).innerHTML = renderGrid(res);
+        if (ex.solution) {
+          const ok = sameResult(res, runSQL(ex.solution), ex.ordered);
+          const pill = $(".status-pill", div);
+          pill.className = "status-pill " + (ok ? "ok" : "no");
+          pill.textContent = ok ? "Correct: matches the expected result" : "Runs, but the result differs from the expected one";
+          if (ok) { progress["ex-" + div.dataset.ex] = true; saveProgress(); }
+        }
+      } catch (e) {
+        $(".err", div).textContent = "Error: " + e.message + friendlyHint(e.message);
+      }
+    };
+    $(".run", div).addEventListener("click", run);
+    ta.addEventListener("keydown", e => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); run(); }
+      if (e.key === "Tab" && !e.shiftKey) { e.preventDefault(); const p = ta.selectionStart; ta.setRangeText("  ", p, ta.selectionEnd, "end"); }
+    });
+    $(".reset", div).addEventListener("click", () => { ta.value = ex.start || ""; $(".err", div).textContent = ""; $(".result", div).innerHTML = ""; });
+    if (ex.solution) {
+      $(".hint-b", div).addEventListener("click", () => { const h = $(".hint-t", div); if (h) h.hidden = !h.hidden; });
+      $(".sol-b", div).addEventListener("click", () => { $(".solution", div).classList.toggle("show"); buildCode(); });
+    }
+    if (progress["ex-" + div.dataset.ex] && ex.solution) { const p = $(".status-pill", div); p.className = "status-pill ok"; p.textContent = "Solved before"; }
+  });
+}
+function friendlyHint(msg) {
+  if (/no such column/i.test(msg)) return "\nCheck the column name and which table it belongs to. With a JOIN, prefix columns with the table alias (for example co.person_id).";
+  if (/no such table/i.test(msg)) return "\nTables here: person, concept, condition_occurrence, drug_exposure, measurement, visit_occurrence, death.";
+  if (/ambiguous/i.test(msg)) return "\nTwo joined tables share this column name: say which one you mean, for example co.person_id.";
+  if (/syntax error/i.test(msg)) return "\nLook just before the word shown: a missing comma, an extra comma before FROM, or an unclosed bracket or quote are the usual causes.";
+  if (/misuse of aggregate|GROUP BY/i.test(msg)) return "\nEvery column in SELECT that isn't inside COUNT/MIN/MAX/SUM must be listed in GROUP BY.";
+  return "";
+}
+async function initEngine() {
+  const st = $("#engine");
+  try {
+    if (typeof initSqlJs !== "function") throw new Error("library not loaded");
+    const SQL = await initSqlJs();
+    const db = new SQL.Database();
+    for (const [t, def] of Object.entries(DB)) {
+      db.run(`CREATE TABLE ${t} (${def.cols.map(c => `${c} ${DB_TYPES[c] || "INTEGER"}`).join(", ")})`);
+      const stmt = db.prepare(`INSERT INTO ${t} VALUES (${def.cols.map(() => "?").join(",")})`);
+      def.rows.forEach(r => stmt.run(r));
+      stmt.free();
+    }
+    db.create_function("REGEXP_CONTAINS", (s, re) => (s !== null && new RegExp(re).test(String(s))) ? 1 : 0);
+    SQLDB = db;
+    st.innerHTML = `<b class="ok">SQL engine ready.</b> Exercises run on a practice database of 12 made-up people.`;
+    document.dispatchEvent(new Event("sql-ready"));
+  } catch (e) {
+    st.innerHTML = `<b class="bad">SQL engine did not load.</b> The lessons still work; to run the exercises, reload the page. Solutions are shown with each exercise.`;
+  }
+}
+
+/* ---------- start ---------- */
+function start() {
+  buildNav(); addPagers(); buildCode(); buildAnnot(); buildQuizzes(); buildSqlBoxes();
+  $$("[data-widget]").forEach(el => { const f = WIDGETS[el.dataset.widget]; if (f) { try { f(el); } catch (e) { el.innerHTML = `<p class="err">This widget failed to load: ${esc(e.message)}</p>`; } } });
+  $$("[data-go]").forEach(b => b.addEventListener("click", () => { location.hash = b.dataset.go; }));
+  show(location.hash.slice(1) || "start");
+  window.addEventListener("hashchange", () => show(location.hash.slice(1)));
+  initEngine();
+}
+document.addEventListener("DOMContentLoaded", start);
+
+</script>
+</body>
+</html>
